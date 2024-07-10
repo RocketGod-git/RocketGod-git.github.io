@@ -33,6 +33,11 @@ jobs:
       run: |
         pandoc main_repo/README.md -o index.html
 
+    - name: Debug - List Files
+      run: |
+        ls -la
+        ls -la main_repo
+
     - name: Commit and push changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,5 +45,5 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add index.html
-        git commit -m 'Update index.html from README.md'
+        git commit -m 'Update index.html from README.md' || echo "No changes to commit"
         git push
