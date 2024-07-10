@@ -32,12 +32,19 @@ jobs:
 
     - name: Convert README.md to HTML
       run: |
-        pandoc main_repo/README.md -o pages_repo/index.html
+        pandoc main_repo/README.md -o pages_repo/index.html || echo "README.md not found or conversion failed"
 
     - name: Debug - List Files
       run: |
         ls -la pages_repo
         ls -la main_repo
+
+    - name: Ensure index.html exists
+      run: |
+        if [ ! -f pages_repo/index.html ]; then
+          echo "Creating placeholder index.html"
+          echo "<html><body><h1>Index</h1></body></html>" > pages_repo/index.html
+        fi
 
     - name: Commit and push changes
       working-directory: pages_repo
