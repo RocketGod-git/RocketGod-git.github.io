@@ -13,13 +13,13 @@ jobs:
     
     steps:
     - name: Checkout GitHub Pages repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: RocketGod-git/RocketGod-git.github.io
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Checkout main repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: RocketGod-git/RocketGod-git
         path: main_repo
@@ -34,6 +34,8 @@ jobs:
         pandoc main_repo/README.md -o index.html
 
     - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
