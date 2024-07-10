@@ -17,6 +17,7 @@ jobs:
       with:
         repository: RocketGod-git/RocketGod-git.github.io
         token: ${{ secrets.GITHUB_TOKEN }}
+        path: pages_repo
 
     - name: Checkout main repository
       uses: actions/checkout@v3
@@ -31,14 +32,15 @@ jobs:
 
     - name: Convert README.md to HTML
       run: |
-        pandoc main_repo/README.md -o index.html
+        pandoc main_repo/README.md -o pages_repo/index.html
 
     - name: Debug - List Files
       run: |
-        ls -la
+        ls -la pages_repo
         ls -la main_repo
 
     - name: Commit and push changes
+      working-directory: pages_repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
