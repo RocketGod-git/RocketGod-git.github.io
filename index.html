@@ -19,7 +19,8 @@
             font-family: 'Courier New', monospace;
             background-color: var(--bg-color);
             color: var(--text-color);
-            overflow-x: hidden;
+            overflow: hidden;
+            height: 100vh;
         }
         #particles {
             position: fixed;
@@ -27,28 +28,31 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
+            z-index: 0;
         }
         .container {
             position: relative;
             z-index: 1;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1rem;
+            height: 100vh;
+            overflow-y: auto;
         }
         h1, h2 {
             text-align: center;
             text-transform: uppercase;
+            margin: 0.5rem 0;
         }
         .repo-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
         }
         .repo-card {
             background-color: var(--card-bg);
             border: 1px solid var(--text-color);
-            padding: 1rem;
+            padding: 0.5rem;
             border-radius: 5px;
             transition: all 0.3s ease;
         }
@@ -59,7 +63,7 @@
         .stats {
             display: flex;
             justify-content: space-around;
-            margin-top: 2rem;
+            margin-top: 1rem;
         }
         .stat-item {
             text-align: center;
@@ -69,7 +73,7 @@
             justify-content: center;
             flex-wrap: wrap;
             gap: 1rem;
-            margin-top: 2rem;
+            margin-top: 1rem;
         }
         .links a {
             color: var(--accent-color);
@@ -82,28 +86,28 @@
         }
         #loading {
             text-align: center;
-            font-size: 1.5rem;
-            margin-top: 2rem;
+            font-size: 1rem;
+            margin-top: 1rem;
         }
         .repo-card h3 {
             margin-top: 0;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         .repo-card p {
             margin-bottom: 0;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
         .pagination {
             display: flex;
             justify-content: center;
-            margin-top: 2rem;
+            margin-top: 1rem;
         }
         .pagination button {
             background-color: var(--card-bg);
             color: var(--text-color);
             border: 1px solid var(--text-color);
-            padding: 0.5rem 1rem;
-            margin: 0 0.5rem;
+            padding: 0.25rem 0.5rem;
+            margin: 0 0.25rem;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -119,6 +123,8 @@
             position: fixed;
             z-index: 2;
             pointer-events: none;
+            width: 50px;
+            height: 50px;
         }
     </style>
 </head>
@@ -190,7 +196,7 @@
         animate();
 
         const username = 'RocketGod-git';
-        const perPage = 20;
+        const perPage = 6;
         let currentPage = 1;
         let allRepos = [];
 
@@ -266,8 +272,8 @@
         gsap.from('.stat-item', { duration: 0.5, opacity: 0, x: -20, stagger: 0.1, ease: 'power3.out', delay: 0.5 });
 
         const bouncingImage = document.getElementById('bouncing-image');
-        let x = Math.random() * (window.innerWidth - bouncingImage.width);
-        let y = Math.random() * (window.innerHeight - bouncingImage.height);
+        let x = Math.random() * (window.innerWidth - 50);
+        let y = Math.random() * (window.innerHeight - 50);
         let dx = (Math.random() > 0.5 ? 1 : -1) * 2;
         let dy = (Math.random() > 0.5 ? 1 : -1) * 2;
 
@@ -275,8 +281,8 @@
             x += dx;
             y += dy;
 
-            if (x + bouncingImage.width > window.innerWidth || x < 0) dx = -dx;
-            if (y + bouncingImage.height > window.innerHeight || y < 0) dy = -dy;
+            if (x + 50 > window.innerWidth || x < 0) dx = -dx;
+            if (y + 50 > window.innerHeight || y < 0) dy = -dy;
 
             bouncingImage.style.left = x + 'px';
             bouncingImage.style.top = y + 'px';
