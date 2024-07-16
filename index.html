@@ -19,8 +19,7 @@
             font-family: 'Courier New', monospace;
             background-color: var(--bg-color);
             color: var(--text-color);
-            overflow: hidden;
-            height: 100vh;
+            height: 100%;
         }
         #particles {
             position: fixed;
@@ -36,8 +35,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 1rem;
-            height: 100vh;
-            overflow-y: auto;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
@@ -75,7 +73,8 @@
         }
         .stats {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
+            gap: 2rem;
             margin-top: 1rem;
             text-align: center;
         }
@@ -132,7 +131,7 @@
         }
         #bouncing-image {
             position: fixed;
-            z-index: 2;
+            z-index: 1000;
             pointer-events: none;
             width: 150px;
             height: auto;
@@ -164,6 +163,7 @@
         </div>
         <div class="repo-section">
             <h2>Top Repositories</h2>
+            <p id="repo-count" style="text-align: center;"></p>
             <div id="loading">Loading repositories...</div>
             <div class="repo-list" id="repo-list"></div>
             <div class="pagination">
@@ -222,10 +222,23 @@
 
         async function fetchRepos() {
             try {
-                const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&type=owner`);
-                const repos = await response.json();
-                allRepos = repos.filter(repo => !repo.fork)
-                                .sort((a, b) => b.stargazers_count - a.stargazers_count);
+                let page = 1;
+                let hasNextPage = true;
+
+                while (hasNextPage) {
+                    const response = await fetch(`https://api.github.com/users/${username}/repos?per_page=100&page=${page}&type=owner`);
+                    const repos = await response.json();
+                    
+                    if (repos.length === 0) {
+                        hasNextPage = false;
+                    } else {
+                        allRepos = allRepos.concat(repos);
+                        page++;
+                    }
+                }
+
+                allRepos = allRepos.filter(repo => !repo.fork)
+                                   .sort((a, b) => b.stargazers_count - a.stargazers_count);
                 updateRepoList();
                 updateStats();
             } catch (error) {
@@ -261,6 +274,8 @@
             
             document.getElementById('prev-page').disabled = currentPage === 1;
             document.getElementById('next-page').disabled = currentPage >= Math.ceil(allRepos.length / perPage);
+
+            document.getElementById('repo-count').textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, allRepos.length)} of ${allRepos.length} repositories`;
         }
 
         function updateStats() {
