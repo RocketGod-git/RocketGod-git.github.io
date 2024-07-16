@@ -38,16 +38,27 @@
             padding: 1rem;
             height: 100vh;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         h1, h2, h3 {
             text-align: center;
             text-transform: uppercase;
             margin: 0.5rem 0;
         }
+        .links-section {
+            margin-bottom: 2rem;
+        }
+        .repo-section {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
         .repo-list {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
+            margin-bottom: 1rem;
         }
         .repo-card {
             background-color: var(--card-bg);
@@ -65,13 +76,8 @@
         .stats {
             display: flex;
             justify-content: space-around;
-            margin-top: 1rem;
-        }
-        .stat-item {
+            margin-top: 2rem;
             text-align: center;
-        }
-        .links-section {
-            margin-top: 1rem;
         }
         .links {
             display: flex;
@@ -155,12 +161,14 @@
                 <a href="https://svpd.online" target="_blank">SVPD Online</a>
             </div>
         </div>
-        <h2>Top Repositories</h2>
-        <div id="loading">Loading repositories...</div>
-        <div class="repo-list" id="repo-list"></div>
-        <div class="pagination">
-            <button id="prev-page">Previous</button>
-            <button id="next-page">Next</button>
+        <div class="repo-section">
+            <h2>Top Repositories</h2>
+            <div id="loading">Loading repositories...</div>
+            <div class="repo-list" id="repo-list"></div>
+            <div class="pagination">
+                <button id="prev-page">Previous</button>
+                <button id="next-page">Next</button>
+            </div>
         </div>
         <h2>GitHub Stats</h2>
         <div class="stats">
@@ -250,7 +258,6 @@
             });
 
             document.getElementById('loading').style.display = 'none';
-            gsap.from('.repo-card', { duration: 0.5, opacity: 0, y: 20, stagger: 0.1, ease: 'power3.out' });
             
             document.getElementById('prev-page').disabled = currentPage === 1;
             document.getElementById('next-page').disabled = currentPage >= Math.ceil(allRepos.length / perPage);
@@ -279,9 +286,6 @@
         });
 
         fetchRepos();
-
-        gsap.from('.container', { duration: 1, opacity: 0, y: 50, ease: 'power3.out' });
-        gsap.from('.stat-item', { duration: 0.5, opacity: 0, x: -20, stagger: 0.1, ease: 'power3.out', delay: 0.5 });
 
         const bouncingImage = document.getElementById('bouncing-image');
         let x = Math.random() * (window.innerWidth - bouncingImage.width);
