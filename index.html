@@ -46,20 +46,21 @@
         }
         .links-container {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 2rem;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1rem;
         }
         .links-section {
-            flex: 1;
-            margin: 0 1rem;
+            width: 100%;
+            margin: 0.5rem 0;
         }
         .links {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         .links a {
-            margin: 0.25rem 0;
             color: var(--accent-color);
             text-decoration: none;
             transition: all 0.3s ease;
@@ -141,14 +142,6 @@
             pointer-events: none;
             width: 150px;
             height: auto;
-        }
-        @media (max-width: 768px) {
-            .links-container {
-                flex-direction: column;
-            }
-            .links-section {
-                margin: 1rem 0;
-            }
         }
     </style>
 </head>
