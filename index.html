@@ -153,6 +153,12 @@
             width: 150px;
             height: auto;
         }
+        #visit-counter {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
     </style>
 </head>
 <body>
@@ -346,6 +352,21 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
         });
+
+        function updateVisitCounter() {
+            const countUrl = "https://api.countapi.xyz/hit/rocketgod-git.github.io/visits";
+            fetch(countUrl)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('visit-count').textContent = data.value;
+                })
+                .catch(error => {
+                    console.error('Error updating visit counter:', error);
+                    document.getElementById('visit-count').textContent = 'Error loading count';
+                });
+        }
+
+        updateVisitCounter();
     </script>
 </body>
 </html>
