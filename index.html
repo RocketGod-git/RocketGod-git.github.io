@@ -155,9 +155,11 @@
         }
         #visit-counter {
             text-align: center;
-            margin-top: 1rem;
-            font-size: 1.2rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            font-size: 1rem;
             color: var(--accent-color);
+            border-top: 1px solid var(--text-color);
         }
     </style>
 </head>
@@ -209,6 +211,7 @@
                 <p id="total-contributions">813</p>
             </div>
         </div>
+        <div id="visit-counter">Total Visits: <span id="visit-count">Loading...</span></div>
     </div>
     <script>
         const scene = new THREE.Scene();
