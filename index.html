@@ -17,6 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Pirata+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <style>
         :root {
             --bg-color: #0a0a0a;
@@ -58,10 +59,10 @@
         h1 {
             font-family: 'Pirata One', cursive;
             font-size: 4rem;
-            color: #FFD700; /* Gold color */
-            text-shadow: 2px 2px 4px #000000, 0 0 20px #FF0000, 0 0 30px #FF0000; /* Red glow effect */
+            color: #FFD700;
+            text-shadow: 2px 2px 4px #000000, 0 0 20px #FF0000, 0 0 30px #FF0000;
             letter-spacing: 2px;
-            transform: rotate(-2deg); /* Slight rotation for a more dynamic look */
+            transform: rotate(-2deg);
         }
         .links-container {
             display: flex;
@@ -83,6 +84,7 @@
             color: var(--accent-color);
             text-decoration: none;
             transition: all 0.3s ease;
+            font-size: 24px;
         }
         .links a:hover {
             color: var(--text-color);
@@ -162,6 +164,11 @@
             width: 150px;
             height: auto;
         }
+        .defcon-badge {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -172,22 +179,28 @@
         <div class="links-container">
             <div class="links-section">
                 <div class="links">
-                    <a href="https://discord.gg/thepirates" target="_blank">Discord</a>
-                    <a href="https://www.youtube.com/@lordrocketgod" target="_blank">YouTube</a>
-                    <a href="https://www.instagram.com/rocketgod.official" target="_blank">Instagram</a>
-                    <a href="https://www.tiktok.com/@rocketgod.hacker" target="_blank">TikTok</a>
+                    <a href="https://discord.gg/thepirates" target="_blank"><i class="fab fa-discord"></i></a>
+                    <a href="https://www.youtube.com/@lordrocketgod" target="_blank"><i class="fab fa-youtube"></i></a>
+                    <a href="https://www.instagram.com/rocketgod.official" target="_blank"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.tiktok.com/@rocketgod.hacker" target="_blank"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
             <div class="links-section">
                 <h3>Website Creations</h3>
                 <div class="links">
-                    <a href="https://dcgroups.betaskynet.com" target="_blank">DEF CON Groups Map</a>
-                    <a href="https://thepiratesplunder.com" target="_blank">TPP Website</a>
-                    <a href="https://chatgptuncensored.com" target="_blank">ChatGPT Uncensored</a>
-                    <a href="https://svpd.online" target="_blank">SVPD Online</a>
+                    <a href="https://dcgroups.betaskynet.com" target="_blank"><i class="fas fa-map-marked-alt"></i></a>
+                    <a href="https://thepiratesplunder.com" target="_blank"><i class="fas fa-skull-crossbones"></i></a>
+                    <a href="https://chatgptuncensored.com" target="_blank"><i class="fas fa-comment-dots"></i></a>
+                    <a href="https://svpd.online" target="_blank"><i class="fas fa-shield-alt"></i></a>
                 </div>
             </div>
         </div>
+        
+        <!-- DEF CON Goon Badge -->
+        <div class="defcon-badge">
+            <div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="bfd743df-b64f-496e-8d47-b3eac711c907" data-share-badge-host="https://www.credly.com"></div>
+        </div>
+
         <div class="repo-section">
             <h2>Top Repositories</h2>
             <p id="repo-count" style="text-align: center;"></p>
@@ -356,5 +369,6 @@
             camera.updateProjectionMatrix();
         });
     </script>
+    <script type="text/javascript" src="https://cdn.credly.com/assets/utilities/embed.js" async></script>
 </body>
 </html>
