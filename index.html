@@ -76,6 +76,7 @@
         }
         .links {
             display: flex;
+            align-items: center;
             justify-content: center;
             flex-wrap: wrap;
             gap: 1rem;
@@ -165,11 +166,20 @@
         }
         .links a.social-icon {
             font-size: 36px; 
-            margin: 0 15px; 
+            margin: 0 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .links a.social-icon:hover {
-            transform: scale(1.1); 
+            transform: scale(1.1);
+        }
+
+        .def-con-icon {
+            width: 36px; 
+            height: 36px; 
+            object-fit: contain; 
         }
     </style>
 </head>
@@ -185,6 +195,9 @@
                     <a href="https://www.youtube.com/@lordrocketgod" target="_blank" class="social-icon"><i class="fab fa-youtube"></i></a>
                     <a href="https://www.instagram.com/rocketgod.official" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
                     <a href="https://www.tiktok.com/@rocketgod.hacker" target="_blank" class="social-icon"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://defcon.org/" target="_blank" class="social-icon">
+                        <img src="def-con-32-goon.png" alt="DEF CON 32 Goon" class="def-con-icon">
+                    </a>
                 </div>
             </div>
             <div class="links-section">
