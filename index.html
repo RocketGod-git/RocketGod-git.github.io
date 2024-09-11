@@ -74,10 +74,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
             gap: .5rem;
             width: 100%;
-            white-space: nowrap;
         }
         .links-section {
             text-align: center;
@@ -85,15 +84,15 @@
         }
         @media screen and (max-width: 768px) {
             .links {
+                white-space: nowrap;
                 flex-wrap: wrap;
-                white-space: normal;
                 justify-content: center;
             }
-        }
         .links a {
             color: var(--accent-color);
             text-decoration: none;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
         .links a:hover {
             color: var(--text-color);
