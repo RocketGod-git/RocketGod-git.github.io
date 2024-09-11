@@ -75,12 +75,20 @@
             align-items: center;
             justify-content: center;
             flex-wrap: nowrap;
-            gap: .5rem; 
+            gap: .5rem;
             width: 100%;
+            white-space: nowrap;
         }
         .links-section {
-            text-align: center; 
-            max-width: 100%; 
+            text-align: center;
+            max-width: 100%;
+        }
+        @media screen and (max-width: 768px) {
+            .links {
+                flex-wrap: wrap;
+                white-space: normal;
+                justify-content: center;
+            }
         }
         .links a {
             color: var(--accent-color);
