@@ -70,16 +70,23 @@
             align-items: center;
             margin-bottom: 1rem;
         }
-        .links-section {
-            width: 100%;
-            margin: 0.5rem 0;
-        }
         .links {
             display: flex;
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.5rem; /* Increase gap for better spacing between links */
+            width: 100%;
+        }
+        .links-section {
+            text-align: center; /* Centers the text and links in the middle */
+            max-width: 100%; /* Allow it to stretch to full width */
+        }
+        @media screen and (min-width: 768px) {
+            .links {
+                justify-content: space-evenly; /* Spread links evenly across the available width */
+                flex-wrap: nowrap; /* Avoid wrapping the links */
+            }
         }
         .links a {
             color: var(--accent-color);
