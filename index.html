@@ -78,16 +78,24 @@
             gap: .5rem;
             width: 100%;
         }
+
         .links-section {
             text-align: center;
             max-width: 100%;
         }
+
         @media screen and (max-width: 768px) {
             .links {
                 white-space: nowrap;
                 flex-wrap: wrap;
                 justify-content: center;
             }
+
+            .links a {
+                white-space: nowrap;
+            }
+        }
+
         .links a {
             color: var(--accent-color);
             text-decoration: none;
