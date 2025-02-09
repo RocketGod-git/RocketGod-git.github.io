@@ -387,23 +387,99 @@
         fetchRepos();
 
         const bouncingImage = document.getElementById('bouncing-image');
-        let x = Math.random() * (window.innerWidth - bouncingImage.width);
-        let y = Math.random() * (window.innerHeight - bouncingImage.height);
-        let dx = (Math.random() > 0.5 ? 1 : -1) * 2;
-        let dy = (Math.random() > 0.5 ? 1 : -1) * 2;
+        let x = Math.random() * (window.innerWidth - 150);
+        let y = Math.random() * (window.innerHeight - 150);
+        let velocityX = (Math.random() > 0.5 ? 1 : -1) * 2;
+        let velocityY = (Math.random() > 0.5 ? 1 : -1) * 2;
+        const baseSpeed = 2;
+        const maxSpeed = 15;
+        const hitForceMultiplier = 0.4;
+        const friction = 0.99;
+        const hitRadius = 75;
+
+        let lastMousePos = { x: 0, y: 0 };
+
+        function checkImageHit(clientX, clientY, velocity) {
+            const imageCenter = {
+                x: x + 75,
+                y: y + 75
+            };
+
+            const distance = Math.sqrt(
+                Math.pow(clientX - imageCenter.x, 2) + 
+                Math.pow(clientY - imageCenter.y, 2)
+            );
+
+            if (distance < hitRadius) {
+                velocityX += velocity.x * hitForceMultiplier;
+                velocityY += velocity.y * hitForceMultiplier;
+                
+                const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+                if (currentSpeed > maxSpeed) {
+                    const scale = maxSpeed / currentSpeed;
+                    velocityX *= scale;
+                    velocityY *= scale;
+                }
+            }
+        }
 
         function animateBounce() {
-            x += dx;
-            y += dy;
+            x += velocityX;
+            y += velocityY;
 
-            if (x + bouncingImage.width > window.innerWidth || x < 0) dx = -dx;
-            if (y + bouncingImage.height > window.innerHeight || y < 0) dy = -dy;
+            if (x + 150 > window.innerWidth) {
+                x = window.innerWidth - 150;
+                velocityX = -Math.abs(velocityX) * 0.8;
+            }
+            if (x < 0) {
+                x = 0;
+                velocityX = Math.abs(velocityX) * 0.8;
+            }
+            if (y + 150 > window.innerHeight) {
+                y = window.innerHeight - 150;
+                velocityY = -Math.abs(velocityY) * 0.8;
+            }
+            if (y < 0) {
+                y = 0;
+                velocityY = Math.abs(velocityY) * 0.8;
+            }
+
+            velocityX *= friction;
+            velocityY *= friction;
+
+            const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+            if (currentSpeed < baseSpeed) {
+                const scale = baseSpeed / currentSpeed;
+                velocityX *= scale;
+                velocityY *= scale;
+            }
 
             bouncingImage.style.left = x + 'px';
             bouncingImage.style.top = y + 'px';
 
             requestAnimationFrame(animateBounce);
         }
+
+        function handleMove(e) {
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            
+            const velocity = {
+                x: (clientX - lastMousePos.x) * 0.5,
+                y: (clientY - lastMousePos.y) * 0.5
+            };
+
+            checkImageHit(clientX, clientY, velocity);
+            
+            lastMousePos.x = clientX;
+            lastMousePos.y = clientY;
+        }
+
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+
+        bouncingImage.addEventListener('touchstart', (e) => e.preventDefault());
+        bouncingImage.addEventListener('touchmove', (e) => e.preventDefault());
 
         animateBounce();
 
