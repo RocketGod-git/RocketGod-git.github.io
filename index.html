@@ -385,7 +385,7 @@
         });
 
         fetchRepos();
-
+        
         const bouncingImage = document.getElementById('bouncing-image');
         let x = Math.random() * (window.innerWidth - 150);
         let y = Math.random() * (window.innerHeight - 150);
@@ -398,12 +398,9 @@
         const hitRadius = 75;
         
         let lastMousePos = { x: 0, y: 0 };
-        let lastScrollY = window.scrollY;
         let isTouching = false;
         
         function checkImageHit(clientX, clientY, velocity) {
-            const adjustedClientY = clientY + window.scrollY;
-            
             const imageCenter = {
                 x: x + 75,
                 y: y + 75
@@ -411,7 +408,7 @@
         
             const distance = Math.sqrt(
                 Math.pow(clientX - imageCenter.x, 2) + 
-                Math.pow(adjustedClientY - imageCenter.y, 2)
+                Math.pow(clientY - imageCenter.y, 2)
             );
         
             if (distance < hitRadius) {
@@ -431,10 +428,6 @@
             x += velocityX;
             y += velocityY;
         
-            const viewportHeight = window.innerHeight;
-            const scrollY = window.scrollY;
-            const totalHeight = document.documentElement.scrollHeight;
-        
             if (x + 150 > window.innerWidth) {
                 x = window.innerWidth - 150;
                 velocityX = -Math.abs(velocityX) * 0.8;
@@ -443,8 +436,8 @@
                 x = 0;
                 velocityX = Math.abs(velocityX) * 0.8;
             }
-            if (y + 150 > totalHeight) {
-                y = totalHeight - 150;
+            if (y + 150 > window.innerHeight) {
+                y = window.innerHeight - 150;
                 velocityY = -Math.abs(velocityY) * 0.8;
             }
             if (y < 0) {
@@ -494,12 +487,6 @@
         function handleTouchEnd() {
             isTouching = false;
         }
-        
-        window.addEventListener('scroll', () => {
-            const deltaY = window.scrollY - lastScrollY;
-            velocityY += deltaY * 0.1;
-            lastScrollY = window.scrollY;
-        });
         
         document.addEventListener('mousemove', handleMove, { passive: true });
         document.addEventListener('touchstart', handleTouchStart, { passive: true });
