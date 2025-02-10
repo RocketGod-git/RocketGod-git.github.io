@@ -396,20 +396,24 @@
         const hitForceMultiplier = 0.4;
         const friction = 0.99;
         const hitRadius = 75;
-
+        
         let lastMousePos = { x: 0, y: 0 };
-
+        let lastScrollY = window.scrollY;
+        let isTouching = false;
+        
         function checkImageHit(clientX, clientY, velocity) {
+            const adjustedClientY = clientY + window.scrollY;
+            
             const imageCenter = {
                 x: x + 75,
                 y: y + 75
             };
-
+        
             const distance = Math.sqrt(
                 Math.pow(clientX - imageCenter.x, 2) + 
-                Math.pow(clientY - imageCenter.y, 2)
+                Math.pow(adjustedClientY - imageCenter.y, 2)
             );
-
+        
             if (distance < hitRadius) {
                 velocityX += velocity.x * hitForceMultiplier;
                 velocityY += velocity.y * hitForceMultiplier;
@@ -422,11 +426,15 @@
                 }
             }
         }
-
+        
         function animateBounce() {
             x += velocityX;
             y += velocityY;
-
+        
+            const viewportHeight = window.innerHeight;
+            const scrollY = window.scrollY;
+            const totalHeight = document.documentElement.scrollHeight;
+        
             if (x + 150 > window.innerWidth) {
                 x = window.innerWidth - 150;
                 velocityX = -Math.abs(velocityX) * 0.8;
@@ -435,32 +443,34 @@
                 x = 0;
                 velocityX = Math.abs(velocityX) * 0.8;
             }
-            if (y + 150 > window.innerHeight) {
-                y = window.innerHeight - 150;
+            if (y + 150 > totalHeight) {
+                y = totalHeight - 150;
                 velocityY = -Math.abs(velocityY) * 0.8;
             }
             if (y < 0) {
                 y = 0;
                 velocityY = Math.abs(velocityY) * 0.8;
             }
-
+        
             velocityX *= friction;
             velocityY *= friction;
-
+        
             const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
             if (currentSpeed < baseSpeed) {
                 const scale = baseSpeed / currentSpeed;
                 velocityX *= scale;
                 velocityY *= scale;
             }
-
+        
             bouncingImage.style.left = x + 'px';
             bouncingImage.style.top = y + 'px';
-
+        
             requestAnimationFrame(animateBounce);
         }
-
+        
         function handleMove(e) {
+            if (e.type.includes('touch') && !isTouching) return;
+            
             const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             
@@ -468,19 +478,34 @@
                 x: (clientX - lastMousePos.x) * 0.5,
                 y: (clientY - lastMousePos.y) * 0.5
             };
-
+        
             checkImageHit(clientX, clientY, velocity);
             
             lastMousePos.x = clientX;
             lastMousePos.y = clientY;
         }
-
-        document.addEventListener('mousemove', handleMove);
-        document.addEventListener('touchmove', handleMove, { passive: false });
-
-        bouncingImage.addEventListener('touchstart', (e) => e.preventDefault());
-        bouncingImage.addEventListener('touchmove', (e) => e.preventDefault());
-
+        
+        function handleTouchStart(e) {
+            isTouching = true;
+            lastMousePos.x = e.touches[0].clientX;
+            lastMousePos.y = e.touches[0].clientY;
+        }
+        
+        function handleTouchEnd() {
+            isTouching = false;
+        }
+        
+        window.addEventListener('scroll', () => {
+            const deltaY = window.scrollY - lastScrollY;
+            velocityY += deltaY * 0.1;
+            lastScrollY = window.scrollY;
+        });
+        
+        document.addEventListener('mousemove', handleMove, { passive: true });
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('touchmove', handleMove, { passive: true });
+        
         animateBounce();
 
         window.addEventListener('resize', () => {
