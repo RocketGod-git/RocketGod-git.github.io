@@ -207,6 +207,78 @@
                 height: 42px; 
             }
         }
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            max-height: 400px; 
+            overflow-y: auto;
+            padding: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--text-color);
+            border-radius: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--text-color) var(--bg-color);
+        }
+        
+        .project-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .project-grid::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        
+        .project-grid::-webkit-scrollbar-thumb {
+            background: var(--text-color);
+            border-radius: 4px;
+        }
+        
+        .project-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: var(--card-bg);
+            border: 1px solid var(--text-color);
+            padding: 0.75rem;
+            border-radius: 5px;
+            text-decoration: none;
+            color: var(--accent-color);
+            transition: all 0.3s ease;
+            min-height: 80px;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+            background-color: rgba(0, 255, 0, 0.2);
+            color: var(--text-color);
+        }
+        
+        .project-title {
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .project-desc {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        @media screen and (max-width: 768px) {
+            .project-grid {
+                grid-template-columns: 1fr;
+                max-height: 300px; 
+            }
+        }
+        gsap.from('.project-card', {
+            opacity: 0,
+            y: 20,
+            stagger: 0.05,
+            duration: 0.5,
+            ease: 'power2.out'
+        });
     </style>
 </head>
 <body>
@@ -227,27 +299,75 @@
                 </div>
             </div>
             <div class="links-section">
-                <h3>SOCIALS 👆 SHIT I'VE MADE 👇</h3><br>
-                <div class="links">
-                    <a href="https://fuckyou.gay" target="_blank" rel="noopener noreferrer">fuckyou.gay</a> ▰
-                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/breakout" target="_blank" rel="noopener noreferrer">HackRF Portapack - Breakout game</a> ▰
-                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/snake" target="_blank" rel="noopener noreferrer">HackRF Portapack - Snake game</a> ▰
-                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/doom" target="_blank" rel="noopener noreferrer">HackRF Portapack - DOOM game (coming soon)</a> ▰
-                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/cvs_spam" target="_blank" rel="noopener noreferrer">HackRF Portapack - CVS Spam App</a> ▰
-                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/shoppingcart_lock" target="_blank" rel="noopener noreferrer">HackRF Portapack - Shopping Cart Lock App</a> ▰
-                    <a href="https://apps.apple.com/us/app/tracker-detector/id6738701716?platform=iphone" target="_blank" rel="noopener noreferrer">Tracker & Flipper Zero Detector & Locator</a> ▰                   
-                    <a href="https://github.com/RocketGod-git/flipper-zero-rf-jammer" target="_blank" rel="noopener noreferrer">Flipper Zero RF Jammer</a> ▰
-                    <a href="https://lab.flipper.net/apps/radio_scanner" target="_blank" rel="noopener noreferrer">Flipper Zero Radio Scanner</a> ▰
-                    <a href="https://lab.flipper.net/apps/cyborg_detector" target="_blank" rel="noopener noreferrer">Flipper Zero Cyborg Detector</a> ▰
-                    <a href="https://lab.flipper.net/apps/umpire_indicator" target="_blank" rel="noopener noreferrer">Flipper Zero Umpire Indicator</a> ▰
-                    <a href="https://lab.flipper.net/apps/laser_tag" target="_blank" rel="noopener noreferrer">Flipper Zero Laser Tag</a> ▰
-                    <a href="https://dcgroups.betaskynet.com" target="_blank" rel="noopener noreferrer">DEF CON Groups Map</a> ▰
-                    <a href="https://thepiratesplunder.com" target="_blank" rel="noopener noreferrer">TPP Website</a> ▰
-                    <a href="https://chatgptuncensored.com" target="_blank" rel="noopener noreferrer">ChatGPT Uncensored</a> ▰
-                    <a href="https://svpd.online" target="_blank" rel="noopener noreferrer">SVPD Online</a>
+                <h3>SHIT I'VE MADE</h3>
+                <div class="project-grid">
+                    <a href="https://fuckyou.gay" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">fuckyou.gay</span>
+                        <span class="project-desc">A cheeky domain hack</span>
+                    </a>
+                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/breakout" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">HackRF Breakout</span>
+                        <span class="project-desc">Portapack game</span>
+                    </a>
+                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/snake" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">HackRF Snake</span>
+                        <span class="project-desc">Classic game port</span>
+                    </a>
+                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/doom" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">HackRF DOOM</span>
+                        <span class="project-desc">FPS game (soon)</span>
+                    </a>
+                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/cvs_spam" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">CVS Spam App</span>
+                        <span class="project-desc">HackRF utility</span>
+                    </a>
+                    <a href="https://github.com/portapack-mayhem/mayhem-firmware/tree/next/firmware/application/external/shoppingcart_lock" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Shopping Cart Lock</span>
+                        <span class="project-desc">HackRF tool</span>
+                    </a>
+                    <a href="https://apps.apple.com/us/app/tracker-detector/id6738701716?platform=iphone" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Tracker Detector</span>
+                        <span class="project-desc">iOS app</span>
+                    </a>
+                    <a href="https://github.com/RocketGod-git/flipper-zero-rf-jammer" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Flipper RF Jammer</span>
+                        <span class="project-desc">Signal disruptor</span>
+                    </a>
+                    <a href="https://lab.flipper.net/apps/radio_scanner" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Radio Scanner</span>
+                        <span class="project-desc">Flipper app</span>
+                    </a>
+                    <a href="https://lab.flipper.net/apps/cyborg_detector" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Cyborg Detector</span>
+                        <span class="project-desc">Flipper app</span>
+                    </a>
+                    <a href="https://lab.flipper.net/apps/umpire_indicator" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Umpire Indicator</span>
+                        <span class="project-desc">Flipper app</span>
+                    </a>
+                    <a href="https://lab.flipper.net/apps/laser_tag" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">Laser Tag</span>
+                        <span class="project-desc">Flipper game</span>
+                    </a>
+                    <a href="https://dcgroups.betaskynet.com" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">DEF CON Groups Map</span>
+                        <span class="project-desc">Interactive map</span>
+                    </a>
+                    <a href="https://thepiratesplunder.com" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">TPP Website</span>
+                        <span class="project-desc">Community site</span>
+                    </a>
+                    <a href="https://chatgptuncensored.com" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">ChatGPT Uncensored</span>
+                        <span class="project-desc">AI tweak</span>
+                    </a>
+                    <a href="https://svpd.online" target="_blank" rel="noopener noreferrer" class="project-card">
+                        <span class="project-title">SVPD Online</span>
+                        <span class="project-desc">Web project</span>
+                    </a>
                 </div>
             </div>
-        </div>  
+        </div> 
         <div class="repo-section">
             <h2>Top Repositories</h2>
             <p id="repo-count" style="text-align: center;"></p>
