@@ -235,11 +235,13 @@
             box-sizing: border-box;
         }
         
-        .project-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
-            background-color: rgba(0, 255, 0, 0.2);
-            color: var(--text-color);
+        @media (hover: hover) and (pointer: fine) {
+            .project-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+                background-color: rgba(0, 255, 0, 0.2);
+                color: var(--text-color);
+            }
         }
         
         .project-title {
@@ -255,7 +257,7 @@
         
         @media screen and (min-width: 769px) {
             .project-card {
-                flex: 1 1 calc(20% - 1rem); 
+                flex: 1 1 calc(25% - 1rem); 
             }
         }
         
@@ -292,7 +294,7 @@
                 </div>
             </div>
             <div class="links-section">
-                <h3>SHIT I'VE MADE</h3>
+                <h3>SOCIALS 👆 SHIT I'VE MADE 👇</h3>
                 <div class="project-flex">
                     <a href="https://fuckyou.gay" target="_blank" rel="noopener noreferrer" class="project-card">
                         <span class="project-title">fuckyou.gay</span>
