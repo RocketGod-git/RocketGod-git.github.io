@@ -207,34 +207,20 @@
                 height: 42px; 
             }
         }
-        .project-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+        
+        .project-flex {
+            display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
-            max-height: 400px; 
-            overflow-y: auto;
+            justify-content: center;
             padding: 0.5rem;
             background-color: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--text-color);
             border-radius: 5px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--text-color) var(--bg-color);
-        }
-        
-        .project-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .project-grid::-webkit-scrollbar-track {
-            background: var(--bg-color);
-        }
-        
-        .project-grid::-webkit-scrollbar-thumb {
-            background: var(--text-color);
-            border-radius: 4px;
         }
         
         .project-card {
+            flex: 1 1 calc(50% - 1rem); 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -246,6 +232,7 @@
             color: var(--accent-color);
             transition: all 0.3s ease;
             min-height: 80px;
+            box-sizing: border-box;
         }
         
         .project-card:hover {
@@ -266,12 +253,18 @@
             color: rgba(255, 255, 255, 0.7);
         }
         
-        @media screen and (max-width: 768px) {
-            .project-grid {
-                grid-template-columns: 1fr;
-                max-height: 300px; 
+        @media screen and (min-width: 769px) {
+            .project-card {
+                flex: 1 1 calc(20% - 1rem); 
             }
         }
+        
+        @media screen and (max-width: 768px) {
+            .project-card {
+                flex: 1 1 calc(50% - 1rem); 
+            }
+        }
+        
         gsap.from('.project-card', {
             opacity: 0,
             y: 20,
@@ -300,7 +293,7 @@
             </div>
             <div class="links-section">
                 <h3>SHIT I'VE MADE</h3>
-                <div class="project-grid">
+                <div class="project-flex">
                     <a href="https://fuckyou.gay" target="_blank" rel="noopener noreferrer" class="project-card">
                         <span class="project-title">fuckyou.gay</span>
                         <span class="project-desc">A cheeky domain hack</span>
@@ -367,7 +360,7 @@
                     </a>
                 </div>
             </div>
-        </div> 
+        </div>
         <div class="repo-section">
             <h2>Top Repositories</h2>
             <p id="repo-count" style="text-align: center;"></p>
