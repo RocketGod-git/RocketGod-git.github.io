@@ -407,6 +407,7 @@
             <div class="pagination">
                 <button id="prev-page">Previous</button>
                 <button id="next-page">Next</button>
+                <button id="view-all">View All</button>
             </div>
         </div>
         <div class="stats">
@@ -439,7 +440,7 @@
         }
 
         particles.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const material = new THREE.PointsMaterial({ size: 0.005, color: 0x00ff00 });
+        const material = new THREE.PointsMaterial({ size: 0.006, color: 0x00ff00 });
         const particlesMesh = new THREE.Points(particles, material);
         scene.add(particlesMesh);
 
@@ -454,7 +455,7 @@
         animate();
 
         const username = 'RocketGod-git';
-        const perPage = 6;
+        let perPage = 4;
         let currentPage = 1;
         let allRepos = [];
 
@@ -536,6 +537,13 @@
                 currentPage++;
                 updateRepoList();
             }
+        });
+
+        document.getElementById('view-all').addEventListener('click', () => {
+            perPage = allRepos.length;
+            currentPage = 1;
+            updateRepoList();
+            document.querySelector('.pagination').style.display = 'none';
         });
 
         fetchRepos();
