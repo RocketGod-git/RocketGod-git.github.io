@@ -35,6 +35,21 @@
             height: 100%;
         }
 
+        h2 a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        
+        h2 a:hover {
+            color: var(--text-color);
+            text-shadow: 
+                0 0 5px var(--text-color),
+                0 0 10px var(--text-color),
+                0 0 15px var(--accent-color),
+                0 0 20px var(--accent-color);
+        }
+
         #particles {
             position: fixed;
             top: 0;
