@@ -651,7 +651,12 @@
                 y: (clientY - lastMousePos.y) * 0.5
             };
         
-            checkImageHit(clientX, clientY, velocity);
+            const hit = checkImageHit(clientX, clientY, velocity);
+        
+            if (hit && e.type.includes('touch')) {
+                velocityX += velocity.x * 0.3;
+                velocityY += velocity.y * 0.3;
+            }
         
             lastMousePos.x = clientX;
             lastMousePos.y = clientY;
