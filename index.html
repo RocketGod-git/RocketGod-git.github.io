@@ -670,21 +670,26 @@
             isTouching = true;
             lastMousePos.x = e.touches[0].clientX;
             lastMousePos.y = e.touches[0].clientY;
-        
-            const touchX = e.touches[0].clientX;
-            const touchY = e.touches[0].clientY;
-            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
-                e.preventDefault();
-            }
+            
+            const velocity = { x: 0, y: 0 }; // Initial velocity on touch
+            checkImageHit(e.touches[0].clientX, e.touches[0].clientY, velocity, e);
         }
         
         function handleTouchMove(e) {
-            const touchX = e.touches[0].clientX;
-            const touchY = e.touches[0].clientY;
-            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
-                e.preventDefault();
-            }
-            handleMove(e);
+            if (!isTouching) return;
+            
+            const clientX = e.touches[0].clientX;
+            const clientY = e.touches[0].clientY;
+            
+            const velocity = {
+                x: (clientX - lastMousePos.x) * 0.5,
+                y: (clientY - lastMousePos.y) * 0.5
+            };
+            
+            const imageHit = checkImageHit(clientX, clientY, velocity, e);
+            
+            lastMousePos.x = clientX;
+            lastMousePos.y = clientY;
         }
         
         function handleTouchEnd() {
@@ -701,10 +706,10 @@
         }
         
         document.addEventListener('mousemove', handleMove, { passive: true });
-        document.addEventListener('touchstart', handleTouchStart, { passive: false });
-        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchmove', handleTouchMove, { passive: true });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
-        document.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+        document.addEventListener('touchcancel', handleTouchEnd, { passive: true });
         
         animateBounce();
         
