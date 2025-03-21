@@ -579,7 +579,7 @@
         let lastMousePos = { x: 0, y: 0 };
         let isTouching = false;
         
-        function checkImageHit(clientX, clientY, velocity) {
+        function checkImageHit(clientX, clientY, velocity, event) {
             const imageCenter = {
                 x: x + 75,
                 y: y + 75
@@ -591,7 +591,7 @@
             );
         
             if (distance < hitRadius) {
-                if (e.type.includes('touch')) {
+                if (event.type.includes('touch')) {
                     velocityX = velocity.x * 1.5;
                     velocityY = velocity.y * 1.5;
                 } else {
@@ -656,7 +656,7 @@
                 y: (clientY - lastMousePos.y) * 0.5
             };
         
-            checkImageHit(clientX, clientY, velocity);
+            checkImageHit(clientX, clientY, velocity, e);
         
             lastMousePos.x = clientX;
             lastMousePos.y = clientY;
