@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <link rel="shortcut icon" href="https://rocketgod-git.github.io/rocketgod_logo.jpg" type="image/x-icon">
     <link rel="icon" href="favicon.ico">
@@ -580,10 +580,13 @@
         const friction = 0.99;
         const hitRadius = 150;
         
-        let lastMousePos = { x: 0, y: 0 };
-        let isTouching = false;
+        let lastTouchPos = { x: 0, y: 0 };
+        let touchStartPos = { x: 0, y: 0 };
+        let isTouchingImage = false;
+        let touchStartTime = 0;
+        const scrollThreshold = 10; 
         
-        function checkImageHit(clientX, clientY, velocity, event) {
+        function checkImageHit(clientX, clientY, velocity) {
             const imageCenter = {
                 x: x + 75,
                 y: y + 75
@@ -595,13 +598,8 @@
             );
         
             if (distance < hitRadius) {
-                if (event.type.includes('touch')) {
-                    velocityX = velocity.x * 2.5;
-                    velocityY = velocity.y * 2.5;
-                } else {
-                    velocityX += velocity.x * hitForceMultiplier;
-                    velocityY += velocity.y * hitForceMultiplier;
-                }
+                velocityX += velocity.x * hitForceMultiplier;
+                velocityY += velocity.y * hitForceMultiplier;
                 
                 const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
                 if (currentSpeed > maxSpeed) {
@@ -656,55 +654,58 @@
             const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         
             const velocity = {
-                x: (clientX - lastMousePos.x) * 0.5,
-                y: (clientY - lastMousePos.y) * 0.5
+                x: (clientX - lastTouchPos.x) * 0.5,
+                y: (clientY - lastTouchPos.y) * 0.5
             };
         
-            checkImageHit(clientX, clientY, velocity, e);
+            if (!e.type.includes('touch') || isTouchingImage) {
+                checkImageHit(clientX, clientY, velocity);
+            }
         
-            lastMousePos.x = clientX;
-            lastMousePos.y = clientY;
+            lastTouchPos.x = clientX;
+            lastTouchPos.y = clientY;
         }
         
         function handleTouchStart(e) {
-            isTouching = true;
-            lastMousePos.x = e.touches[0].clientX;
-            lastMousePos.y = e.touches[0].clientY;
-        
-            const touchX = e.touches[0].clientX;
-            const touchY = e.touches[0].clientY;
-            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
-                e.preventDefault();
-            }
+            touchStartPos.x = lastTouchPos.x = e.touches[0].clientX;
+            touchStartPos.y = lastTouchPos.y = e.touches[0].clientY;
+            touchStartTime = Date.now();
+            isTouchingImage = checkImageHit(touchStartPos.x, touchStartPos.y, {x: 0, y: 0});
         }
         
         function handleTouchMove(e) {
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
-            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
-                e.preventDefault();
+            
+            const distanceMoved = Math.sqrt(
+                Math.pow(touchX - touchStartPos.x, 2) + 
+                Math.pow(touchY - touchStartPos.y, 2)
+            );
+        
+            if (distanceMoved > scrollThreshold && !isTouchingImage) {
+                return; 
             }
-            handleMove(e);
+        
+            if (isTouchingImage) {
+                e.preventDefault();
+                handleMove(e);
+            }
         }
         
         function handleTouchEnd() {
-            isTouching = false;
-        }
-        
-        function handleTouchCancel(e) {
-            const touchX = e.changedTouches[0].clientX;
-            const touchY = e.changedTouches[0].clientY;
-            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
-                e.preventDefault();
+            const touchDuration = Date.now() - touchStartTime;
+            if (touchDuration < 200 && isTouchingImage) {
+                // Treat as a tap - give it a bigger push
+                velocityX *= 2.5;
+                velocityY *= 2.5;
             }
-            isTouching = false;
+            isTouchingImage = false;
         }
         
         document.addEventListener('mousemove', handleMove, { passive: true });
-        document.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchstart', handleTouchStart, { passive: true });
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
-        document.addEventListener('touchcancel', handleTouchCancel, { passive: false });
         
         animateBounce();
         
@@ -713,11 +714,11 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
         });
-
-    gsap.fromTo('.project-card',
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, stagger: 0.05, duration: 0.5, ease: 'power2.out' }
-    );
-    </script>
+        
+        gsap.fromTo('.project-card',
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, stagger: 0.05, duration: 0.5, ease: 'power2.out' }
+        );
+        </script>
 </body>
 </html>
