@@ -618,6 +618,7 @@
             x += velocityX;
             y += velocityY;
         
+            // Boundary checks
             if (x + 150 > window.innerWidth) {
                 x = window.innerWidth - 150;
                 velocityX = -Math.abs(velocityX) * 0.8;
@@ -640,9 +641,8 @@
         
             const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
             if (currentSpeed < baseSpeed) {
-                const scale = baseSpeed / currentSpeed;
-                velocityX *= scale;
-                velocityY *= scale;
+                velocityX = (velocityX / currentSpeed) * baseSpeed + (Math.random() - 0.5) * 0.1;
+                velocityY = (velocityY / currentSpeed) * baseSpeed + (Math.random() - 0.5) * 0.1;
             }
         
             bouncingImage.style.left = x + 'px';
@@ -670,9 +670,6 @@
             isTouching = true;
             lastMousePos.x = e.touches[0].clientX;
             lastMousePos.y = e.touches[0].clientY;
-            
-            const velocity = { x: 0, y: 0 }; // Initial velocity on touch
-            checkImageHit(e.touches[0].clientX, e.touches[0].clientY, velocity, e);
         }
         
         function handleTouchMove(e) {
@@ -685,6 +682,12 @@
                 x: (clientX - lastMousePos.x) * 0.5,
                 y: (clientY - lastMousePos.y) * 0.5
             };
+            
+            checkImageHit(clientX, clientY, velocity, e);
+            
+            lastMousePos.x = clientX;
+            lastMousePos.y = clientY;
+        }
             
             const imageHit = checkImageHit(clientX, clientY, velocity, e);
             
