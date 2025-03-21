@@ -591,8 +591,13 @@
             );
         
             if (distance < hitRadius) {
-                velocityX += velocity.x * hitForceMultiplier;
-                velocityY += velocity.y * hitForceMultiplier;
+                if (e.type.includes('touch')) {
+                    velocityX = velocity.x * 1.5;
+                    velocityY = velocity.y * 1.5;
+                } else {
+                    velocityX += velocity.x * hitForceMultiplier;
+                    velocityY += velocity.y * hitForceMultiplier;
+                }
                 
                 const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
                 if (currentSpeed > maxSpeed) {
@@ -651,12 +656,7 @@
                 y: (clientY - lastMousePos.y) * 0.5
             };
         
-            const hit = checkImageHit(clientX, clientY, velocity);
-        
-            if (hit && e.type.includes('touch')) {
-                velocityX += velocity.x * 0.3;
-                velocityY += velocity.y * 0.3;
-            }
+            checkImageHit(clientX, clientY, velocity);
         
             lastMousePos.x = clientX;
             lastMousePos.y = clientY;
