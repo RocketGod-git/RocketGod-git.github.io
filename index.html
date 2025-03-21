@@ -618,24 +618,29 @@
         }
         
         function animateBounce() {
+            const imgWidth = bouncingImage.offsetWidth || 150;
+            const imgHeight = bouncingImage.offsetHeight || 150;
+        
             let newX = x + velocityX;
             let newY = y + velocityY;
         
-            if (newX < 0) {
+            const viewportWidth = document.documentElement.clientWidth;
+            const viewportHeight = document.documentElement.clientHeight;
+        
+            if (newX <= 0) {
                 newX = 0;
                 velocityX = Math.abs(velocityX) * 0.8;
             }
-            if (newY < 0) {
+            if (newY <= 0) {
                 newY = 0;
                 velocityY = Math.abs(velocityY) * 0.8;
             }
-        
-            if (newX + 150 > window.innerWidth) {
-                newX = window.innerWidth - 150;
+            if (newX + imgWidth >= viewportWidth) {
+                newX = viewportWidth - imgWidth;
                 velocityX = -Math.abs(velocityX) * 0.8;
             }
-            if (newY + 150 > window.innerHeight) {
-                newY = window.innerHeight - 150;
+            if (newY + imgHeight >= viewportHeight) {
+                newY = viewportHeight - imgHeight;
                 velocityY = -Math.abs(velocityY) * 0.8;
             }
         
@@ -652,9 +657,9 @@
                 velocityY *= scale;
             }
         
-            bouncingImage.style.left = x + 'px';
-            bouncingImage.style.top = y + 'px';
-        
+            bouncingImage.style.left = `${x}px`;
+            bouncingImage.style.top = `${y}px`;
+              
             requestAnimationFrame(animateBounce);
         }
         
