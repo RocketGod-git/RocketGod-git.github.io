@@ -613,25 +613,29 @@
         }
         
         function animateBounce() {
-            x += velocityX;
-            y += velocityY;
+            let newX = x + velocityX;
+            let newY = y + velocityY;
         
-            if (x + 150 > window.innerWidth) {
-                x = window.innerWidth - 150;
-                velocityX = -Math.abs(velocityX) * 0.8;
-            }
-            if (x < 0) {
-                x = 0;
+            if (newX < 0) {
+                newX = 0;
                 velocityX = Math.abs(velocityX) * 0.8;
             }
-            if (y + 150 > window.innerHeight) {
-                y = window.innerHeight - 150;
-                velocityY = -Math.abs(velocityY) * 0.8;
-            }
-            if (y < 0) {
-                y = 0;
+            if (newY < 0) {
+                newY = 0;
                 velocityY = Math.abs(velocityY) * 0.8;
             }
+        
+            if (newX + 150 > window.innerWidth) {
+                newX = window.innerWidth - 150;
+                velocityX = -Math.abs(velocityX) * 0.8;
+            }
+            if (newY + 150 > window.innerHeight) {
+                newY = window.innerHeight - 150;
+                velocityY = -Math.abs(velocityY) * 0.8;
+            }
+        
+            x = newX;
+            y = newY;
         
             velocityX *= friction;
             velocityY *= friction;
