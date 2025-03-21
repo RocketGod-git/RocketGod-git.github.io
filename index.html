@@ -34,6 +34,7 @@
             color: var(--text-color);
             height: 100%;
             touch-action: pan-y;
+            overscroll-behavior-y: none;
         }
 
         h2 a {
@@ -575,7 +576,7 @@
         const maxSpeed = 15;
         const hitForceMultiplier = 0.4;
         const friction = 0.99;
-        const hitRadius = 120;
+        const hitRadius = 150;
         
         let lastMousePos = { x: 0, y: 0 };
         let isTouching = false;
@@ -593,8 +594,8 @@
         
             if (distance < hitRadius) {
                 if (event.type.includes('touch')) {
-                    velocityX = velocity.x * 2.0;
-                    velocityY = velocity.y * 2.0;
+                    velocityX = velocity.x * 2.5;
+                    velocityY = velocity.y * 2.5;
                 } else {
                     velocityX += velocity.x * hitForceMultiplier;
                     velocityY += velocity.y * hitForceMultiplier;
@@ -669,14 +670,16 @@
             lastMousePos.y = e.touches[0].clientY;
         
             const touchX = e.touches[0].clientX;
-            if (touchX < 50 || touchX > window.innerWidth - 50) {
+            const touchY = e.touches[0].clientY;
+            if (touchX < 50 || touchX > window.innerWidth - 50 || touchY < 50) {
                 e.preventDefault();
             }
         }
         
         function handleTouchMove(e) {
             const touchX = e.touches[0].clientX;
-            if (touchX < 50 || touchX > window.innerWidth - 50) {
+            const touchY = e.touches[0].clientY;
+            if (touchX < 50 || touchX > window.innerWidth - 50 || touchY < 50) {
                 e.preventDefault();
             }
             handleMove(e);
