@@ -33,6 +33,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             height: 100%;
+            touch-action: pan-y;
         }
 
         h2 a {
@@ -660,6 +661,19 @@
             isTouching = true;
             lastMousePos.x = e.touches[0].clientX;
             lastMousePos.y = e.touches[0].clientY;
+        
+            const touchX = e.touches[0].clientX;
+            if (touchX < 50 || touchX > window.innerWidth - 50) {
+                e.preventDefault();
+            }
+        }
+        
+        function handleTouchMove(e) {
+            const touchX = e.touches[0].clientX;
+            if (touchX < 50 || touchX > window.innerWidth - 50) {
+                e.preventDefault();
+            }
+            handleMove(e);
         }
         
         function handleTouchEnd() {
@@ -667,9 +681,9 @@
         }
         
         document.addEventListener('mousemove', handleMove, { passive: true });
-        document.addEventListener('touchstart', handleTouchStart, { passive: true });
+        document.addEventListener('touchstart', handleTouchStart, { passive: false });
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
-        document.addEventListener('touchmove', handleMove, { passive: true });
         
         animateBounce();
         
