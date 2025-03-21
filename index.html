@@ -571,7 +571,7 @@
         let velocityY = (Math.random() > 0.5 ? 1 : -1) * 2;
         const baseSpeed = 2;
         const maxSpeed = 15;
-        const hitForceMultiplier = 0.6;
+        const hitForceMultiplier = 0.4;
         const friction = 0.99;
         const hitRadius = 100;
         
@@ -650,12 +650,7 @@
                 y: (clientY - lastMousePos.y) * 0.5
             };
         
-            const hit = checkImageHit(clientX, clientY, velocity);
-        
-            if (hit && e.type.includes('touch')) {
-                velocityX += velocity.x * 0.2;
-                velocityY += velocity.y * 0.2;
-            }
+            checkImageHit(clientX, clientY, velocity);
         
             lastMousePos.x = clientX;
             lastMousePos.y = clientY;
@@ -674,7 +669,7 @@
         document.addEventListener('mousemove', handleMove, { passive: true });
         document.addEventListener('touchstart', handleTouchStart, { passive: true });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
-        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchmove', handleMove, { passive: true });
         
         animateBounce();
         
