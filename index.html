@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 
     <link rel="shortcut icon" href="https://rocketgod-git.github.io/rocketgod_logo.jpg" type="image/x-icon">
     <link rel="icon" href="favicon.ico">
@@ -34,7 +35,7 @@
             color: var(--text-color);
             height: 100%;
             touch-action: pan-y;
-            overscroll-behavior-y: none;
+            overscroll-behavior: none;
         }
 
         h2 a {
@@ -70,6 +71,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            touch-action: pan-y;
         }
 
         h1, h2, h3 {
@@ -671,7 +673,7 @@
         
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
-            if (touchX < 50 || touchX > window.innerWidth - 50 || touchY < 50) {
+            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
                 e.preventDefault();
             }
         }
@@ -679,7 +681,7 @@
         function handleTouchMove(e) {
             const touchX = e.touches[0].clientX;
             const touchY = e.touches[0].clientY;
-            if (touchX < 50 || touchX > window.innerWidth - 50 || touchY < 50) {
+            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
                 e.preventDefault();
             }
             handleMove(e);
@@ -689,10 +691,20 @@
             isTouching = false;
         }
         
+        function handleTouchCancel(e) {
+            const touchX = e.changedTouches[0].clientX;
+            const touchY = e.changedTouches[0].clientY;
+            if (touchX < 100 || touchX > window.innerWidth - 100 || touchY < 50) {
+                e.preventDefault();
+            }
+            isTouching = false;
+        }
+        
         document.addEventListener('mousemove', handleMove, { passive: true });
         document.addEventListener('touchstart', handleTouchStart, { passive: false });
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        document.addEventListener('touchcancel', handleTouchCancel, { passive: false });
         
         animateBounce();
         
