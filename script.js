@@ -18,13 +18,13 @@ scene.add(particlesMesh);
 
 camera.position.z = 3;
 
-function animate() {
-    requestAnimationFrame(animate);
+function animateParticles() {
+    requestAnimationFrame(animateParticles);
     particlesMesh.rotation.x += 0.0001;
     particlesMesh.rotation.y += 0.0001;
     renderer.render(scene, camera);
 }
-animate();
+animateParticles();
 
 const username = 'RocketGod-git';
 let perPage = 12;
@@ -53,7 +53,6 @@ async function fetchRepos() {
         updateRepoList();
         updateStats();
     } catch (error) {
-        console.error('Error fetching repositories:', error);
         document.getElementById('loading').textContent = 'Error loading repositories. Please try again later.';
     }
 }
@@ -130,26 +129,24 @@ const baseSpeed = 2;
 const maxSpeed = 15;
 const hitForceMultiplier = 0.4;
 const friction = 0.99;
-const hitRadius = 75;
+const hitRadius = 100;
 
 let lastTouchPos = { x: 0, y: 0 };
 let currentTouchId = null;
+let lastTime = performance.now();
 
 function checkImageHit(clientX, clientY, velocity) {
     const imageCenter = {
         x: x + 75,
         y: y + 75
     };
-
     const distance = Math.sqrt(
         Math.pow(clientX - imageCenter.x, 2) +
         Math.pow(clientY - imageCenter.y, 2)
     );
-
     if (distance < hitRadius) {
         velocityX += velocity.x * hitForceMultiplier;
         velocityY += velocity.y * hitForceMultiplier;
-
         const currentSpeed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
         if (currentSpeed > maxSpeed) {
             const scale = maxSpeed / currentSpeed;
@@ -161,9 +158,12 @@ function checkImageHit(clientX, clientY, velocity) {
     return false;
 }
 
-function animateBounce() {
-    x += velocityX;
-    y += velocityY;
+function animateBounce(currentTime) {
+    const deltaTime = (currentTime - lastTime) / 16.67;
+    lastTime = currentTime;
+
+    x += velocityX * deltaTime;
+    y += velocityY * deltaTime;
 
     if (x + 150 > window.innerWidth) {
         x = window.innerWidth - 150;
@@ -197,8 +197,8 @@ function animateBounce() {
 }
 
 function handleTouchStart(e) {
-    const touch = e.touches[0];
     if (!currentTouchId) {
+        const touch = e.touches[0];
         currentTouchId = touch.identifier;
         lastTouchPos.x = touch.clientX;
         lastTouchPos.y = touch.clientY;
@@ -244,7 +244,7 @@ document.addEventListener('touchmove', handleTouchMove, { passive: true });
 document.addEventListener('touchend', handleTouchEnd, { passive: true });
 document.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-animateBounce();
+requestAnimationFrame(animateBounce);
 
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
