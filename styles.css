@@ -13,6 +13,23 @@ html {
     background-color: var(--bg-color);
     color: var(--text-color);
     height: 100%;
+    touch-action: pan-y;
+    overscroll-behavior: none;
+}
+
+h2 a {
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+h2 a:hover {
+    color: var(--text-color);
+    text-shadow:
+        0 0 5px var(--text-color),
+        0 0 10px var(--text-color),
+        0 0 15px var(--accent-color),
+        0 0 20px var(--accent-color);
 }
 
 #particles {
@@ -33,6 +50,7 @@ html {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    touch-action: pan-y;
 }
 
 h1,
@@ -202,6 +220,14 @@ h1 {
     pointer-events: none;
     width: 150px;
     height: auto;
+    touch-action: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    left: 0;
+    top: 0;
+    transform: translate(0px, 0px);
+    will-change: transform;
 }
 
 .links a.social-icon {
