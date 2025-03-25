@@ -24,11 +24,11 @@ html {
     position: relative;
     margin: 0;
     padding: 0;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.00em;
 }
 
 #rocketgod-header {
-    letter-spacing: -0.05em;
+    letter-spacing: -0.00em;
     display: inline-flex;
     justify-content: center;
 }
