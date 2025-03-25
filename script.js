@@ -132,8 +132,8 @@ const hitForceMultiplier = 0.4;
 const friction = 0.99;
 const hitRadius = 75;
 
-let lastMousePos = { x: 0, y: 0 };
-let isTouching = false;
+let lastTouchPos = { x: 0, y: 0 };
+let currentTouchId = null;
 
 function checkImageHit(clientX, clientY, velocity) {
     const imageCenter = {
@@ -192,44 +192,57 @@ function animateBounce() {
         velocityY *= scale;
     }
 
-    bouncingImage.style.left = x + 'px';
-    bouncingImage.style.top = y + 'px';
-
+    bouncingImage.style.transform = `translate(${x}px, ${y}px)`;
     requestAnimationFrame(animateBounce);
 }
 
-function handleMove(e) {
-    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-    const velocity = {
-        x: (clientX - lastMousePos.x) * 0.5,
-        y: (clientY - lastMousePos.y) * 0.5
-    };
-
-    checkImageHit(clientX, clientY, velocity);
-
-    lastMousePos.x = clientX;
-    lastMousePos.y = clientY;
-}
-
 function handleTouchStart(e) {
-    isTouching = true;
-    lastMousePos.x = e.touches[0].clientX;
-    lastMousePos.y = e.touches[0].clientY;
-
-    const velocity = { x: 0, y: 0 };
-    checkImageHit(lastMousePos.x, lastMousePos.y, velocity);
+    const touch = e.touches[0];
+    if (!currentTouchId) {
+        currentTouchId = touch.identifier;
+        lastTouchPos.x = touch.clientX;
+        lastTouchPos.y = touch.clientY;
+        checkImageHit(touch.clientX, touch.clientY, { x: 0, y: 0 });
+    }
 }
 
-function handleTouchEnd() {
-    isTouching = false;
+function handleTouchMove(e) {
+    const touch = Array.from(e.touches).find(t => t.identifier === currentTouchId);
+    if (touch) {
+        const clientX = touch.clientX;
+        const clientY = touch.clientY;
+        const velocity = {
+            x: (clientX - lastTouchPos.x) * 0.5,
+            y: (clientY - lastTouchPos.y) * 0.5
+        };
+        checkImageHit(clientX, clientY, velocity);
+        lastTouchPos.x = clientX;
+        lastTouchPos.y = clientY;
+    }
 }
 
-document.addEventListener('mousemove', handleMove, { passive: true });
+function handleTouchEnd(e) {
+    if (e.touches.length === 0 || !Array.from(e.touches).some(t => t.identifier === currentTouchId)) {
+        currentTouchId = null;
+    }
+}
+
+function handleMouseMove(e) {
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    const velocity = {
+        x: (clientX - lastTouchPos.x) * 0.5,
+        y: (clientY - lastTouchPos.y) * 0.5
+    };
+    checkImageHit(clientX, clientY, velocity);
+    lastTouchPos.x = clientX;
+    lastTouchPos.y = clientY;
+}
+
 document.addEventListener('touchstart', handleTouchStart, { passive: true });
+document.addEventListener('touchmove', handleTouchMove, { passive: true });
 document.addEventListener('touchend', handleTouchEnd, { passive: true });
-document.addEventListener('touchmove', handleMove, { passive: true });
+document.addEventListener('mousemove', handleMouseMove, { passive: true });
 
 animateBounce();
 
