@@ -239,6 +239,93 @@ function handleMouseMove(e) {
     lastTouchPos.y = clientY;
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    const h1Element = document.querySelector('h1');
+    const headerText = h1Element.textContent;
+    h1Element.textContent = '';
+    h1Element.id = 'rocketgod-header';
+    
+    for (let i = 0; i < headerText.length; i++) {
+        const span = document.createElement('span');
+        span.className = 'header-letter';
+        span.textContent = headerText[i];
+        h1Element.appendChild(span);
+    }
+    
+    const letterElements = document.querySelectorAll('.header-letter');
+    const letterObjects = Array.from(letterElements).map(letter => {
+        const rect = letter.getBoundingClientRect();
+        return {
+            element: letter,
+            x: rect.left,
+            y: rect.top,
+            width: rect.width,
+            height: rect.height,
+            centerX: rect.left + rect.width / 2,
+            isActive: false
+        };
+    });
+    
+    function updateLetterPositions() {
+        letterObjects.forEach(letter => {
+            const rect = letter.element.getBoundingClientRect();
+            letter.x = rect.left;
+            letter.y = rect.top;
+            letter.width = rect.width;
+            letter.height = rect.height;
+            letter.centerX = rect.left + rect.width / 2;
+        });
+    }
+    
+    window.addEventListener('resize', updateLetterPositions);
+    
+    function handleHeaderInteraction(clientX, clientY) {
+        letterObjects.forEach(letter => {
+            const distX = Math.abs(clientX - letter.centerX);
+            const distY = Math.abs(clientY - letter.y);
+            const interactionRadius = 80;
+            
+            if (distX < interactionRadius && distY < interactionRadius) {
+                const strength = 1 - Math.min(1, Math.sqrt(distX * distX + distY * distY) / interactionRadius);
+                const drip = 1 + strength * 1.5;
+                
+                letter.element.style.transform = `scaleY(${drip})`;
+                letter.element.classList.add('dripping');
+                letter.isActive = true;
+            } else if (letter.isActive) {
+                letter.element.style.transform = '';
+                letter.element.classList.remove('dripping');
+                letter.isActive = false;
+            }
+        });
+    }
+    
+    document.addEventListener('mousemove', (e) => {
+        handleHeaderInteraction(e.clientX, e.clientY);
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        Array.from(e.touches).forEach(touch => {
+            handleHeaderInteraction(touch.clientX, touch.clientY);
+        });
+    }, { passive: true });
+    
+    function resetAllLetters() {
+        letterObjects.forEach((letter, index) => {
+            setTimeout(() => {
+                letter.element.style.transform = '';
+                letter.element.classList.remove('dripping');
+                letter.isActive = false;
+            }, index * 50);
+        });
+    }
+    
+    document.addEventListener('mouseleave', resetAllLetters);
+    document.addEventListener('touchend', resetAllLetters);
+    
+    updateLetterPositions();
+});
+
 document.addEventListener('touchstart', handleTouchStart, { passive: true });
 document.addEventListener('touchmove', handleTouchMove, { passive: true });
 document.addEventListener('touchend', handleTouchEnd, { passive: true });

@@ -17,6 +17,22 @@ html {
     overscroll-behavior: none;
 }
 
+.header-letter {
+    display: inline-block;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-origin: top center;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    letter-spacing: -0.05em;
+}
+
+#rocketgod-header {
+    letter-spacing: -0.05em;
+    display: inline-flex;
+    justify-content: center;
+}
+
 h2 a {
     color: var(--accent-color);
     text-decoration: none;
