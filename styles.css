@@ -78,12 +78,20 @@ h3 {
 }
 
 h1 {
-    font-family: 'Pirata One', cursive;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
     font-size: 4rem;
-    color: #FFD700;
-    text-shadow: 2px 2px 4px #000000, 0 0 20px #FF0000, 0 0 30px #FF0000;
-    letter-spacing: 2px;
+    color: var(--text-color);
+    text-shadow:
+        0 0 5px var(--text-color),
+        0 0 10px var(--text-color),
+        0 0 15px var(--accent-color),
+        0 0 20px var(--accent-color);
+    letter-spacing: 4px;
     transform: rotate(-2deg);
+    text-align: center;
+    text-transform: uppercase;
+    margin: 0.5rem 0;
 }
 
 .links-container {
