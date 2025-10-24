@@ -231,19 +231,13 @@
 .rgpr-btn .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 10px #00ffa2,0 0 24px #00ffa2}
 .rgpr-btn:hover{transform:translateY(-1px)}
 @keyframes rgpr-rotate{to{transform:rotate(360deg)}}
-.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden;touch-action:none}
+.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden}
 .rgpr-modal.show{display:flex}
 .rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column;overscroll-behavior:contain}
-.rgpr-shell::before{content:"";position:absolute;inset:0;background:
- radial-gradient(900px 260px at 15% -10%,rgba(0,255,160,.12),transparent),
- radial-gradient(800px 240px at 110% 120%,rgba(0,255,160,.08),transparent),
- repeating-linear-gradient(180deg,rgba(0,255,160,.06) 0,rgba(0,255,160,.06) 2px,transparent 4px,transparent 6px);
- pointer-events:none;animation:rgpr-wipe 2.2s ease-in-out infinite}
-@keyframes rgpr-wipe{0%{transform:translateX(-6%)}50%{transform:translateX(6%)}100%{transform:translateX(-6%)}}
 @keyframes rgpr-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .rgpr-exit{animation:rgpr-out .2s ease forwards}
 @keyframes rgpr-out{to{opacity:0;transform:translateY(10px) scale(.98)}}
-.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
+.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .rgpr-scroll::-webkit-scrollbar{width:0;height:0}
 .rgpr-lock{overflow:hidden}
     `;
@@ -266,46 +260,31 @@
     modal.appendChild(shell);
     document.body.appendChild(modal);
 
-    let globalBlocker=null;
-    let quarantineOn=false;
-
     function blockBackground(enable){
       if(enable){
         document.body.classList.add('rgpr-lock');
-        globalBlocker=(e)=>{ if(!shell.contains(e.target)){ e.preventDefault(); e.stopPropagation(); } };
-        window.addEventListener('touchmove',globalBlocker,{passive:false,capture:true});
-        window.addEventListener('wheel',globalBlocker,{passive:false,capture:true});
+        window.addEventListener('touchmove',bgBlock,{passive:false,capture:true});
+        window.addEventListener('wheel',bgBlock,{passive:false,capture:true});
       }else{
         document.body.classList.remove('rgpr-lock');
-        if(globalBlocker){
-          window.removeEventListener('touchmove',globalBlocker,{capture:true});
-          window.removeEventListener('wheel',globalBlocker,{capture:true});
-          globalBlocker=null;
-        }
+        window.removeEventListener('touchmove',bgBlock,{capture:true});
+        window.removeEventListener('wheel',bgBlock,{capture:true});
       }
     }
+    function bgBlock(e){ if(!shell.contains(e.target)){ e.preventDefault(); e.stopPropagation(); } }
 
-    function enableQuarantine(){
-      if(quarantineOn) return;
-      quarantineOn=true;
-      document.addEventListener('click',quarantineHandler,true);
-      document.addEventListener('pointerdown',quarantineHandler,true);
-      document.addEventListener('pointermove',quarantineHandler,true);
-      document.addEventListener('keydown',quarantineHandler,true);
+    function openModal(){
+      modal.classList.add('show');
+      shell.classList.remove('rgpr-exit');
+      blockBackground(true);
+      passResize();
     }
-
-    function disableQuarantine(){
-      if(!quarantineOn) return;
-      quarantineOn=false;
-      document.removeEventListener('click',quarantineHandler,true);
-      document.removeEventListener('pointerdown',quarantineHandler,true);
-      document.removeEventListener('pointermove',quarantineHandler,true);
-      document.removeEventListener('keydown',quarantineHandler,true);
+    function closeModal(){
+      shell.classList.add('rgpr-exit');
+      setTimeout(()=>{ modal.classList.remove('show'); shell.classList.remove('rgpr-exit'); blockBackground(false); },200);
     }
-
-    function quarantineHandler(e){
-      if(!shell.contains(e.target)){ e.stopPropagation(); e.preventDefault(); }
-    }
+    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal() });
+    btn.addEventListener('click',openModal);
 
     const root=host.attachShadow({mode:'open'});
     const wrap=document.createElement('div');
@@ -343,8 +322,8 @@
 #rg-pr-widget .bgfx,.scanlines,.matrix,.transition{position:absolute;inset:0;pointer-events:none}
 #rg-pr-widget .bgfx{background:radial-gradient(1200px 400px at 10% -10%,rgba(0,255,128,.14),transparent),radial-gradient(1000px 400px at 110% 120%,rgba(0,255,128,.08),transparent)}
 #rg-pr-widget .scanlines{background:repeating-linear-gradient(180deg,rgba(0,0,0,.0) 0,rgba(0,0,0,.0) 2px,rgba(0,255,128,.04) 3px,rgba(0,255,128,.04) 3px);mix-blend-mode:overlay;opacity:.35}
-#rg-pr-widget .glow{position:absolute;inset:-60px;filter:blur(60px);background:conic-gradient(from 180deg at 50% 50%,rgba(0,255,128,.08),transparent 30%,rgba(0,255,128,.08) 60%,transparent 80%);animation:rg-rotate 18s linear infinite}
-#rg-pr-widget .matrix{opacity:.22}
+#rg-pr-widget .glow{position:absolute;inset:-60px;filter:blur(60px);background:conic-gradient(from 180deg at 50% 50%,rgba(0,255,128,.09),transparent 30%,rgba(0,255,128,.09) 60%,transparent 80%);animation:rg-rotate 18s linear infinite}
+#rg-pr-widget .matrix{opacity:.26}
 #rg-pr-widget .matrix canvas{position:absolute;top:0;left:0;width:100%;height:100%}
 #rg-pr-widget .transition{opacity:0}
 #rg-pr-widget .transition.play{opacity:1;background:linear-gradient(90deg,transparent,rgba(0,255,128,.25) 40%,rgba(0,255,128,.6) 50%,rgba(0,255,128,.25) 60%,transparent),repeating-linear-gradient(0deg,rgba(0,255,128,.08) 0,rgba(0,255,128,.08) 2px,transparent 4px,transparent 6px);animation:rg-wipe .42s ease}
@@ -376,27 +355,32 @@
     const canvas=wrap.querySelector('canvas');
     const ctx=canvas.getContext('2d');
 
-    function sizeForViewport(){
+    function resizeCanvas(){
       const dpr=Math.max(1,window.devicePixelRatio||1);
-      const w=wrap.getBoundingClientRect().width;
-      const h=Math.max(scroller.clientHeight, wrap.getBoundingClientRect().height);
-      wrap.style.minHeight=h+'px';
-      canvas.width=Math.max(1,Math.floor(w*dpr));
-      canvas.height=Math.max(1,Math.floor(h*dpr));
+      const w=Math.max(1,wrap.getBoundingClientRect().width);
+      const h=Math.max(1,scroller.scrollHeight);
+      canvas.width=Math.floor(w*dpr);
+      canvas.height=Math.floor(h*dpr);
       canvas.style.width=w+'px';
       canvas.style.height=h+'px';
       ctx.setTransform(dpr,0,0,dpr,0,0);
       initRain();
     }
+    function passResize(){
+      resizeCanvas();
+      requestAnimationFrame(resizeCanvas);
+      setTimeout(resizeCanvas,80);
+      setTimeout(resizeCanvas,160);
+    }
 
-    const ro=new ResizeObserver(sizeForViewport);
+    const ro=new ResizeObserver(passResize);
     ro.observe(wrap);
     ro.observe(scroller);
 
     let drops=[];
     function initRain(){
       const dpr=Math.max(1,window.devicePixelRatio||1);
-      const logicalW=(canvas.width/dpr);
+      const logicalW=canvas.width/dpr;
       const cols=Math.max(1,Math.ceil(logicalW/14));
       drops=new Array(cols).fill(0).map(()=>Math.floor(Math.random()*100));
     }
@@ -410,7 +394,8 @@
         ctx.fillStyle='rgba(0,255,160,0.9)';
         ctx.font='14px monospace';
         ctx.fillText(text,i*14,drops[i]*14);
-        if(drops[i]*14>(canvas.height/Math.max(1,window.devicePixelRatio||1))&&(Math.random()>0.975)) drops[i]=0;
+        const logicalH=canvas.height/Math.max(1,window.devicePixelRatio||1);
+        if(drops[i]*14>logicalH&&(Math.random()>0.975)) drops[i]=0;
         drops[i]++;
       }
       requestAnimationFrame(rain);
@@ -452,9 +437,7 @@
         card.appendChild(t); card.appendChild(meta); card.appendChild(link);
         grid.appendChild(card); animateIn(card,i);
       });
-      sizeForViewport();
-      requestAnimationFrame(sizeForViewport);
-      setTimeout(sizeForViewport,60);
+      passResize();
     }
 
     function playTransition(){
@@ -481,34 +464,11 @@
         }
       }finally{
         tab.classList.remove('loading');
+        passResize();
       }
     }
 
     tabs.forEach(t=>t.addEventListener('click',()=>load(t)));
-
-    function openModal(){
-      modal.classList.add('show');
-      shell.classList.remove('rgpr-exit');
-      blockBackground(true);
-      enableQuarantine();
-      requestAnimationFrame(sizeForViewport);
-      setTimeout(sizeForViewport,80);
-      setTimeout(sizeForViewport,200);
-    }
-
-    function closeModal(){
-      shell.classList.add('rgpr-exit');
-      setTimeout(()=>{
-        modal.classList.remove('show');
-        shell.classList.remove('rgpr-exit');
-        blockBackground(false);
-        disableQuarantine();
-      },200);
-    }
-
-    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal() });
-    btn.addEventListener('click',openModal);
-
     load(tabMerged);
   }
 
