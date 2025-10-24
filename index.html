@@ -231,7 +231,7 @@
 .rgpr-btn .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 10px #00ffa2,0 0 24px #00ffa2}
 .rgpr-btn:hover{transform:translateY(-1px)}
 @keyframes rgpr-rotate{to{transform:rotate(360deg)}}
-.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden}
+.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden;touch-action:none}
 .rgpr-modal.show{display:flex}
 .rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column;overscroll-behavior:contain}
 .rgpr-shell::before{content:"";position:absolute;inset:0;background:
@@ -243,7 +243,7 @@
 @keyframes rgpr-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .rgpr-exit{animation:rgpr-out .2s ease forwards}
 @keyframes rgpr-out{to{opacity:0;transform:translateY(10px) scale(.98)}}
-.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
 .rgpr-scroll::-webkit-scrollbar{width:0;height:0}
 .rgpr-lock{overflow:hidden}
     `;
@@ -266,45 +266,29 @@
     modal.appendChild(shell);
     document.body.appendChild(modal);
 
-    let wheelBlocker=null, touchBlocker=null;
+    let globalBlocker=null;
     let quarantineOn=false;
     const quarantineTypes=['touchstart','touchmove','touchend','wheel','mousewheel','mousemove','pointermove','keydown','keyup','mousedown','mouseup','click'];
 
-    function blockScroll(enable){
+    function blockBackground(enable){
       if(enable){
         document.body.classList.add('rgpr-lock');
-        wheelBlocker=e=>{if(!shell.contains(e.target)){e.preventDefault()}};
-        touchBlocker=e=>{if(!shell.contains(e.target)){e.preventDefault()}};
-        window.addEventListener('wheel',wheelBlocker,{passive:false,capture:true});
-        window.addEventListener('touchmove',touchBlocker,{passive:false,capture:true});
+        globalBlocker=(e)=>{
+          if(!shell.contains(e.target)){
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        };
+        window.addEventListener('touchmove',globalBlocker,{passive:false,capture:true});
+        window.addEventListener('wheel',globalBlocker,{passive:false,capture:true});
       }else{
         document.body.classList.remove('rgpr-lock');
-        if(wheelBlocker) window.removeEventListener('wheel',wheelBlocker,{capture:true});
-        if(touchBlocker) window.removeEventListener('touchmove',touchBlocker,{capture:true});
-        wheelBlocker=null; touchBlocker=null;
+        if(globalBlocker){
+          window.removeEventListener('touchmove',globalBlocker,{capture:true});
+          window.removeEventListener('wheel',globalBlocker,{capture:true});
+          globalBlocker=null;
+        }
       }
-    }
-
-    function consumeWheel(e){
-      if(!scroller.contains(e.target)) return;
-      e.preventDefault();
-      scroller.scrollTop+=e.deltaY;
-    }
-
-    function consumeTouchStart(e){
-      if(!scroller.contains(e.target)) return;
-      const t=e.touches[0];
-      scroller._touchY=t.clientY;
-    }
-
-    function consumeTouchMove(e){
-      if(scroller._touchY==null) return;
-      if(!scroller.contains(e.target)) return;
-      const t=e.touches[0];
-      const dy=scroller._touchY-t.clientY;
-      scroller._touchY=t.clientY;
-      e.preventDefault();
-      scroller.scrollTop+=dy;
     }
 
     function enableQuarantine(){
@@ -324,20 +308,15 @@
     }
 
     function stopper(e){
-      if(e.type==='wheel' || e.type==='mousewheel' || e.type==='touchmove'){
-        if(scroller.contains(e.target)) return;
-      }
+      if((e.type==='wheel'||e.type==='mousewheel'||e.type==='touchmove') && scroller.contains(e.target)) return;
       e.stopPropagation();
     }
 
     function openModal(){
       modal.classList.add('show');
       shell.classList.remove('rgpr-exit');
-      blockScroll(true);
+      blockBackground(true);
       enableQuarantine();
-      modal.addEventListener('wheel',consumeWheel,{passive:false,capture:true});
-      modal.addEventListener('touchstart',consumeTouchStart,{passive:false,capture:true});
-      modal.addEventListener('touchmove',consumeTouchMove,{passive:false,capture:true});
     }
 
     function closeModal(){
@@ -345,11 +324,8 @@
       setTimeout(()=>{
         modal.classList.remove('show');
         shell.classList.remove('rgpr-exit');
-        blockScroll(false);
+        blockBackground(false);
         disableQuarantine();
-        modal.removeEventListener('wheel',consumeWheel,{capture:true});
-        modal.removeEventListener('touchstart',consumeTouchStart,{capture:true});
-        modal.removeEventListener('touchmove',consumeTouchMove,{capture:true});
       },200);
     }
 
