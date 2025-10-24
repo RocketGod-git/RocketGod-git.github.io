@@ -222,53 +222,83 @@
   function mountRGPRModal(cfg){
     const user=cfg.user||'RocketGod-git';
     const token=cfg.token||'';
-    const h2=document.querySelector(cfg.insertAfterSelector||'h2');
-    if(!h2)return;
+    const h2=document.querySelector(cfg.insertAfterSelector||'h2'); if(!h2) return;
+
     const style=document.createElement('style');
     style.textContent=`
 .rgpr-btn{display:inline-flex;align-items:center;gap:.6rem;margin-left:.75rem;padding:.55rem .9rem;border-radius:999px;border:1px solid rgba(0,255,160,.35);background:rgba(0,255,160,.08);color:#9effc9;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;position:relative;overflow:hidden}
 .rgpr-btn:before{content:"";position:absolute;inset:-2px;background:conic-gradient(from 0deg,#00ffa2 0%,transparent 25%,#00ffa2 50%,transparent 75%,#00ffa2 100%);filter:blur(12px);opacity:.25;animation:rgpr-rotate 6s linear infinite}
 .rgpr-btn .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 10px #00ffa2,0 0 24px #00ffa2}
 .rgpr-btn:hover{transform:translateY(-1px)}
-.rgpr-btn:active{transform:translateY(0)}
 @keyframes rgpr-rotate{to{transform:rotate(360deg)}}
-.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:9999}
+.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:auto}
 .rgpr-modal.show{display:flex}
-.rgpr-shell{width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 10px 50px rgba(0,255,160,.15)}
-.rgpr-close{position:absolute;top:14px;right:16px;z-index:10;border:none;background:rgba(0,0,0,.35);color:#9effc9;border:1px solid rgba(0,255,160,.35);padding:.4rem .6rem;border-radius:10px;cursor:pointer}
-.rgpr-enter{animation:rgpr-in .32s ease}
-.rgpr-exit{animation:rgpr-out .22s ease forwards}
-@keyframes rgpr-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes rgpr-out{to{opacity:0;transform:translateY(6px) scale(.98)}}
+.rgpr-modal::before{content:"";position:fixed;inset:0;background:
+ radial-gradient(1000px 300px at 15% -10%,rgba(0,255,160,.12),transparent),
+ radial-gradient(900px 280px at 110% 120%,rgba(0,255,160,.08),transparent),
+ repeating-linear-gradient(180deg,rgba(0,255,160,.06) 0,rgba(0,255,160,.06) 2px,transparent 4px,transparent 6px);
+ pointer-events:none;animation:rgpr-wipe 2.2s ease-in-out infinite}
+@keyframes rgpr-wipe{0%{transform:translateX(-8%)}50%{transform:translateX(8%)}100%{transform:translateX(-8%)}}
+.rgpr-shell{width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease}
+@keyframes rgpr-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.rgpr-exit{animation:rgpr-out .2s ease forwards}
+@keyframes rgpr-out{to{opacity:0;transform:translateY(10px) scale(.98)}}
+.rgpr-lock{overflow:hidden}
     `;
     document.head.appendChild(style);
+
     const btn=document.createElement('button');
     btn.className='rgpr-btn';
     btn.innerHTML=`<span class="dot"></span><span>View Pull Requests</span>`;
     h2.appendChild(btn);
+
     const modal=document.createElement('div');
     modal.className='rgpr-modal';
     const shell=document.createElement('div');
-    shell.className='rgpr-shell rgpr-enter';
-    const close=document.createElement('button');
-    close.className='rgpr-close';
-    close.textContent='Close';
+    shell.className='rgpr-shell';
     const host=document.createElement('div');
-    shell.appendChild(close);
     shell.appendChild(host);
     modal.appendChild(shell);
     document.body.appendChild(modal);
-    function openModal(){modal.classList.add('show');shell.classList.remove('rgpr-exit');shell.classList.add('rgpr-enter')}
-    function closeModal(){shell.classList.remove('rgpr-enter');shell.classList.add('rgpr-exit');setTimeout(()=>modal.classList.remove('show'),200)}
-    close.addEventListener('click',closeModal);
-    modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+
+    let wheelBlocker=null, touchBlocker=null;
+
+    function blockScroll(enable){
+      if(enable){
+        document.body.classList.add('rgpr-lock');
+        wheelBlocker=e=>{if(!shell.contains(e.target)){e.preventDefault()}};
+        touchBlocker=e=>{if(!shell.contains(e.target)){e.preventDefault()}};
+        window.addEventListener('wheel',wheelBlocker,{passive:false,capture:true});
+        window.addEventListener('touchmove',touchBlocker,{passive:false,capture:true});
+      }else{
+        document.body.classList.remove('rgpr-lock');
+        if(wheelBlocker) window.removeEventListener('wheel',wheelBlocker,{capture:true});
+        if(touchBlocker) window.removeEventListener('touchmove',touchBlocker,{capture:true});
+        wheelBlocker=null; touchBlocker=null;
+      }
+    }
+
+    function openModal(){
+      modal.classList.add('show');
+      shell.classList.remove('rgpr-exit');
+      blockScroll(true);
+    }
+
+    function closeModal(){
+      shell.classList.add('rgpr-exit');
+      setTimeout(()=>{modal.classList.remove('show'); shell.classList.remove('rgpr-exit'); blockScroll(false)},200);
+    }
+
+    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal() });
     btn.addEventListener('click',openModal);
+
     const root=host.attachShadow({mode:'open'});
     const wrap=document.createElement('div');
     wrap.id='rg-pr-widget';
     wrap.setAttribute('data-user',user);
-    if(token)wrap.setAttribute('data-token',token);
+    if(token) wrap.setAttribute('data-token',token);
     root.appendChild(wrap);
+
     const css=`
 #rg-pr-widget{position:relative;isolation:isolate;overflow:hidden;background:#020403;color:#b7ffb7;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 #rg-pr-widget .rg-title{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7bff7b;font-size:14px;margin:0;padding:18px 20px 10px}
@@ -308,9 +338,8 @@
 @keyframes rg-rotate{to{transform:rotate(360deg)}}
 @keyframes rg-wipe{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
     `;
-    const wstyle=document.createElement('style');
-    wstyle.textContent=css;
-    root.appendChild(wstyle);
+    const wstyle=document.createElement('style'); wstyle.textContent=css; root.appendChild(wstyle);
+
     wrap.innerHTML=`
 <div class="bgfx"></div>
 <div class="glow"></div>
@@ -322,6 +351,7 @@
 <div class="stage"><div class="grid"></div><div class="transition"></div></div>
 <div class="footer"><span class="count">0 results</span><a class="link" href="https://github.com/${encodeURIComponent(user)}" target="_blank" rel="noopener">View Profile</a></div>
     `;
+
     const grid=wrap.querySelector('.grid');
     const countEl=wrap.querySelector('.count');
     const tabMerged=wrap.querySelectorAll('.tab')[0];
@@ -329,13 +359,16 @@
     const transitionFx=wrap.querySelector('.transition');
     const canvas=wrap.querySelector('canvas');
     const ctx=canvas.getContext('2d');
+
     function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight}
     const ro=new ResizeObserver(resize); ro.observe(canvas); resize();
+
     let drops=[];
     function initRain(){const cols=Math.max(1,Math.floor(canvas.width/14));drops=new Array(cols).fill(0).map(()=>Math.floor(Math.random()*canvas.height))}
     initRain();
     function rain(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,canvas.width,canvas.height);const letters='01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*+<>';for(let i=0;i<drops.length;i++){const text=letters.charAt(Math.floor(Math.random()*letters.length));ctx.fillStyle='rgba(0,255,160,0.9)';ctx.font='14px monospace';ctx.fillText(text,i*14,drops[i]*14);if(drops[i]*14>canvas.height&&(Math.random()>0.975))drops[i]=0;drops[i]++}requestAnimationFrame(rain)}
     rain();
+
     function headers(){const h=new Headers();h.set('Accept','application/vnd.github+json');h.set('User-Agent','rg-pr-widget');if(token)h.set('Authorization','Bearer '+token);return h}
     async function ghSearch(q){
       let items=[];
@@ -351,9 +384,11 @@
       const map=new Map(); for(const it of items) map.set(it.html_url,it);
       return [...map.values()];
     }
+
     function timeAgo(d){const s=Math.floor((Date.now()-new Date(d).getTime())/1000);const u=[['y',31536000],['mo',2592000],['d',86400],['h',3600],['m',60],['s',1]];for(const [l,sec] of u){const v=Math.floor(s/sec);if(v>=1)return v+l+' ago'}return'now'}
     function iconSvg(path){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('width','14');s.setAttribute('height','14');const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',path);p.setAttribute('fill','currentColor');s.appendChild(p);return s}
     function animateIn(el,i){el.style.opacity='0';el.style.transform='translateY(10px) scale(.98)';el.style.transition='opacity .4s ease, transform .4s ease';setTimeout(()=>{el.style.opacity='1';el.style.transform='translateY(0) scale(1)'},40+(i*30))}
+
     function render(items,label){
       grid.innerHTML='';
       items.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -370,14 +405,17 @@
         grid.appendChild(card); animateIn(card,i);
       });
     }
+
     function playTransition(){
       return new Promise(res=>{
         grid.classList.add('fade');
-        transitionFx.classList.add('play');
-        const end=()=>{transitionFx.classList.remove('play');grid.classList.remove('fade');transitionFx.removeEventListener('animationend',end);res()};
-        transitionFx.addEventListener('animationend',end,{once:true});
+        const fx=wrap.querySelector('.transition');
+        fx.classList.add('play');
+        const end=()=>{fx.classList.remove('play');grid.classList.remove('fade');fx.removeEventListener('animationend',end);res()};
+        fx.addEventListener('animationend',end,{once:true});
       });
     }
+
     let cache={merged:null,open:null};
     async function load(tab){
       tabMerged.classList.remove('active'); tabOpen.classList.remove('active');
@@ -395,20 +433,16 @@
         tab.classList.remove('loading');
       }
     }
+
     tabMerged.addEventListener('click',()=>load(tabMerged));
     tabOpen.addEventListener('click',()=>load(tabOpen));
     load(tabMerged);
   }
+
   document.addEventListener('DOMContentLoaded',function(){
-    mountRGPRModal({
-      insertAfterSelector: '.repo-section h2',
-      user: 'RocketGod-git',
-      token: ''
-    });
+    mountRGPRModal({insertAfterSelector:'.repo-section h2',user:'RocketGod-git',token:''});
   });
 })();
 </script>
-
 </body>
-
 </html>
