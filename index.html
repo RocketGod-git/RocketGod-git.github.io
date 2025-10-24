@@ -233,7 +233,7 @@
 @keyframes rgpr-rotate{to{transform:rotate(360deg)}}
 .rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden;touch-action:none}
 .rgpr-modal.show{display:flex}
-.rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column;overscroll-behavior:contain;transform:translateZ(0)}
+.rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column;overscroll-behavior:contain}
 .rgpr-shell::before{content:"";position:absolute;inset:0;background:
  radial-gradient(900px 260px at 15% -10%,rgba(0,255,160,.12),transparent),
  radial-gradient(800px 240px at 110% 120%,rgba(0,255,160,.08),transparent),
@@ -243,12 +243,9 @@
 @keyframes rgpr-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .rgpr-exit{animation:rgpr-out .2s ease forwards}
 @keyframes rgpr-out{to{opacity:0;transform:translateY(10px) scale(.98)}}
-.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y pinch-zoom;background:transparent}
+.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y pinch-zoom}
 .rgpr-scroll::-webkit-scrollbar{width:0;height:0}
 .rgpr-lock{overflow:hidden}
-@media (max-width: 900px){
-  .rgpr-shell{transform:translateZ(0)}
-}
     `;
     document.head.appendChild(style);
 
@@ -271,7 +268,6 @@
 
     let globalBlocker=null;
     let quarantineOn=false;
-    const quarantineTypes=['touchstart','touchmove','touchend','wheel','mousewheel','mousemove','pointermove','keydown','keyup','mousedown','mouseup','click'];
 
     function blockBackground(enable){
       if(enable){
@@ -292,18 +288,23 @@
     function enableQuarantine(){
       if(quarantineOn) return;
       quarantineOn=true;
-      quarantineTypes.forEach(type=>{ shell.addEventListener(type,stopper,{capture:true,passive:false}); });
+      document.addEventListener('click',quarantineHandler,true);
+      document.addEventListener('pointerdown',quarantineHandler,true);
+      document.addEventListener('pointermove',quarantineHandler,true);
+      document.addEventListener('keydown',quarantineHandler,true);
     }
 
     function disableQuarantine(){
       if(!quarantineOn) return;
       quarantineOn=false;
-      quarantineTypes.forEach(type=>{ shell.removeEventListener(type,stopper,{capture:true}); });
+      document.removeEventListener('click',quarantineHandler,true);
+      document.removeEventListener('pointerdown',quarantineHandler,true);
+      document.removeEventListener('pointermove',quarantineHandler,true);
+      document.removeEventListener('keydown',quarantineHandler,true);
     }
 
-    function stopper(e){
-      if((e.type==='wheel'||e.type==='mousewheel'||e.type==='touchmove') && scroller.contains(e.target)) return;
-      e.stopPropagation();
+    function quarantineHandler(e){
+      if(!shell.contains(e.target)){ e.stopPropagation(); e.preventDefault(); }
     }
 
     function openModal(){
@@ -337,7 +338,7 @@
     root.appendChild(wrap);
 
     const css=`
-#rg-pr-widget{position:relative;isolation:isolate;overflow:hidden;background:#020403;color:#b7ffb7;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;transform:translateZ(0);will-change:transform,opacity}
+#rg-pr-widget{position:relative;isolation:isolate;overflow:hidden;background:#020403;color:#b7ffb7;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
 #rg-pr-widget .rg-title{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7bff7b;font-size:14px;margin:0;padding:18px 20px 10px;position:relative;z-index:2}
 #rg-pr-widget .rg-title .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 14px #00ffa2,0 0 30px #00ffa2}
 #rg-pr-widget .tabs{display:flex;align-items:center;gap:10px;padding:0 20px 10px;position:relative;z-index:2}
@@ -363,10 +364,10 @@
 #rg-pr-widget .footer{display:flex;justify-content:space-between;align-items:center;padding:0 20px 18px;font-size:11px;color:#7bff9a;opacity:.9;position:relative;z-index:2}
 #rg-pr-widget .count{font-variant-numeric:tabular-nums}
 #rg-pr-widget .bgfx,.scanlines,.matrix,.transition{position:absolute;inset:0;pointer-events:none}
-#rg-pr-widget .bgfx{background:radial-gradient(1200px 400px at 10% -10%,rgba(0,255,128,.14),transparent),radial-gradient(1000px 400px at 110% 120%,rgba(0,255,128,.08),transparent);transform:translateZ(0);will-change:transform,opacity}
-#rg-pr-widget .scanlines{background:repeating-linear-gradient(180deg,rgba(0,0,0,.0) 0,rgba(0,0,0,.0) 2px,rgba(0,255,128,.04) 3px,rgba(0,255,128,.04) 3px);mix-blend-mode:overlay;opacity:.35;transform:translateZ(0);will-change:transform,opacity}
-#rg-pr-widget .glow{position:absolute;inset:-60px;filter:blur(60px);background:conic-gradient(from 180deg at 50% 50%,rgba(0,255,128,.08),transparent 30%,rgba(0,255,128,.08) 60%,transparent 80%);animation:rg-rotate 18s linear infinite;transform:translateZ(0);will-change:transform,opacity}
-#rg-pr-widget .matrix{opacity:.22;transform:translateZ(0);will-change:transform,opacity}
+#rg-pr-widget .bgfx{background:radial-gradient(1200px 400px at 10% -10%,rgba(0,255,128,.14),transparent),radial-gradient(1000px 400px at 110% 120%,rgba(0,255,128,.08),transparent)}
+#rg-pr-widget .scanlines{background:repeating-linear-gradient(180deg,rgba(0,0,0,.0) 0,rgba(0,0,0,.0) 2px,rgba(0,255,128,.04) 3px,rgba(0,255,128,.04) 3px);mix-blend-mode:overlay;opacity:.35}
+#rg-pr-widget .glow{position:absolute;inset:-60px;filter:blur(60px);background:conic-gradient(from 180deg at 50% 50%,rgba(0,255,128,.08),transparent 30%,rgba(0,255,128,.08) 60%,transparent 80%);animation:rg-rotate 18s linear infinite}
+#rg-pr-widget .matrix{opacity:.22}
 #rg-pr-widget .matrix canvas{position:absolute;top:0;left:0;width:100%;height:100%}
 #rg-pr-widget .transition{opacity:0}
 #rg-pr-widget .transition.play{opacity:1;background:linear-gradient(90deg,transparent,rgba(0,255,128,.25) 40%,rgba(0,255,128,.6) 50%,rgba(0,255,128,.25) 60%,transparent),repeating-linear-gradient(0deg,rgba(0,255,128,.08) 0,rgba(0,255,128,.08) 2px,transparent 4px,transparent 6px);animation:rg-wipe .42s ease}
@@ -393,6 +394,7 @@
     const countEl=wrap.querySelector('.count');
     const tabMerged=wrap.querySelectorAll('.tab')[0];
     const tabOpen=wrap.querySelectorAll('.tab')[1];
+    const transitionFx=wrap.querySelector('.transition');
     const canvas=wrap.querySelector('canvas');
     const ctx=canvas.getContext('2d');
 
@@ -475,10 +477,9 @@
     function playTransition(){
       return new Promise(res=>{
         grid.classList.add('fade');
-        const fx=wrap.querySelector('.transition');
-        fx.classList.add('play');
-        const end=()=>{fx.classList.remove('play');grid.classList.remove('fade');fx.removeEventListener('animationend',end);res()};
-        fx.addEventListener('animationend',end,{once:true});
+        transitionFx.classList.add('play');
+        const end=()=>{transitionFx.classList.remove('play');grid.classList.remove('fade');transitionFx.removeEventListener('animationend',end);res()};
+        transitionFx.addEventListener('animationend',end,{once:true});
       });
     }
 
