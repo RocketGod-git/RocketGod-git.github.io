@@ -374,39 +374,30 @@
     const tabOpen=tabs.find(t=>t.dataset.key==='open');
     const transitionFx=wrap.querySelector('.transition');
     const canvas=wrap.querySelector('canvas');
-    const glow=wrap.querySelector('.glow');
     const ctx=canvas.getContext('2d');
 
-    function resizeCanvas(){
-      const r=wrap.getBoundingClientRect();
+    function sizeForViewport(){
       const dpr=Math.max(1,window.devicePixelRatio||1);
-      canvas.width=Math.max(1,Math.floor(r.width*dpr));
-      canvas.height=Math.max(1,Math.floor(r.height*dpr));
-      canvas.style.width=r.width+'px';
-      canvas.style.height=r.height+'px';
+      const w=wrap.getBoundingClientRect().width;
+      const h=Math.max(scroller.clientHeight, wrap.getBoundingClientRect().height);
+      wrap.style.minHeight=h+'px';
+      canvas.width=Math.max(1,Math.floor(w*dpr));
+      canvas.height=Math.max(1,Math.floor(h*dpr));
+      canvas.style.width=w+'px';
+      canvas.style.height=h+'px';
       ctx.setTransform(dpr,0,0,dpr,0,0);
       initRain();
     }
 
-    function restartCSS(el,anim){
-      if(!el) return;
-      el.style.animation='none';
-      void el.offsetHeight;
-      el.style.animation=anim;
-    }
-
-    function refreshMatrix(){
-      resizeCanvas();
-      restartCSS(glow,'rg-rotate 18s linear infinite');
-    }
-
-    const ro=new ResizeObserver(resizeCanvas);
+    const ro=new ResizeObserver(sizeForViewport);
     ro.observe(wrap);
+    ro.observe(scroller);
 
     let drops=[];
     function initRain(){
-      const w=wrap.clientWidth||canvas.offsetWidth||800;
-      const cols=Math.max(1,Math.ceil(w/14));
+      const dpr=Math.max(1,window.devicePixelRatio||1);
+      const logicalW=(canvas.width/dpr);
+      const cols=Math.max(1,Math.ceil(logicalW/14));
       drops=new Array(cols).fill(0).map(()=>Math.floor(Math.random()*100));
     }
 
@@ -419,7 +410,7 @@
         ctx.fillStyle='rgba(0,255,160,0.9)';
         ctx.font='14px monospace';
         ctx.fillText(text,i*14,drops[i]*14);
-        if(drops[i]*14>canvas.height&&(Math.random()>0.975)) drops[i]=0;
+        if(drops[i]*14>(canvas.height/Math.max(1,window.devicePixelRatio||1))&&(Math.random()>0.975)) drops[i]=0;
         drops[i]++;
       }
       requestAnimationFrame(rain);
@@ -461,7 +452,9 @@
         card.appendChild(t); card.appendChild(meta); card.appendChild(link);
         grid.appendChild(card); animateIn(card,i);
       });
-      refreshMatrix();
+      sizeForViewport();
+      requestAnimationFrame(sizeForViewport);
+      setTimeout(sizeForViewport,60);
     }
 
     function playTransition(){
@@ -488,8 +481,6 @@
         }
       }finally{
         tab.classList.remove('loading');
-        refreshMatrix();
-        requestAnimationFrame(refreshMatrix);
       }
     }
 
@@ -500,8 +491,9 @@
       shell.classList.remove('rgpr-exit');
       blockBackground(true);
       enableQuarantine();
-      requestAnimationFrame(()=>{ resizeCanvas(); refreshMatrix(); });
-      setTimeout(()=>{ resizeCanvas(); refreshMatrix(); },120);
+      requestAnimationFrame(sizeForViewport);
+      setTimeout(sizeForViewport,80);
+      setTimeout(sizeForViewport,200);
     }
 
     function closeModal(){
