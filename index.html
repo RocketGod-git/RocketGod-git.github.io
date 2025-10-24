@@ -231,18 +231,19 @@
 .rgpr-btn .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 10px #00ffa2,0 0 24px #00ffa2}
 .rgpr-btn:hover{transform:translateY(-1px)}
 @keyframes rgpr-rotate{to{transform:rotate(360deg)}}
-.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:auto}
+.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden}
 .rgpr-modal.show{display:flex}
-.rgpr-modal::before{content:"";position:fixed;inset:0;background:
- radial-gradient(1000px 300px at 15% -10%,rgba(0,255,160,.12),transparent),
- radial-gradient(900px 280px at 110% 120%,rgba(0,255,160,.08),transparent),
+.rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column}
+.rgpr-shell::before{content:"";position:absolute;inset:0;background:
+ radial-gradient(900px 260px at 15% -10%,rgba(0,255,160,.12),transparent),
+ radial-gradient(800px 240px at 110% 120%,rgba(0,255,160,.08),transparent),
  repeating-linear-gradient(180deg,rgba(0,255,160,.06) 0,rgba(0,255,160,.06) 2px,transparent 4px,transparent 6px);
  pointer-events:none;animation:rgpr-wipe 2.2s ease-in-out infinite}
-@keyframes rgpr-wipe{0%{transform:translateX(-8%)}50%{transform:translateX(8%)}100%{transform:translateX(-8%)}}
-.rgpr-shell{width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease}
+@keyframes rgpr-wipe{0%{transform:translateX(-6%)}50%{transform:translateX(6%)}100%{transform:translateX(-6%)}}
 @keyframes rgpr-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .rgpr-exit{animation:rgpr-out .2s ease forwards}
 @keyframes rgpr-out{to{opacity:0;transform:translateY(10px) scale(.98)}}
+.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:thin}
 .rgpr-lock{overflow:hidden}
     `;
     document.head.appendChild(style);
@@ -256,8 +257,11 @@
     modal.className='rgpr-modal';
     const shell=document.createElement('div');
     shell.className='rgpr-shell';
+    const scroller=document.createElement('div');
+    scroller.className='rgpr-scroll';
     const host=document.createElement('div');
-    shell.appendChild(host);
+    scroller.appendChild(host);
+    shell.appendChild(scroller);
     modal.appendChild(shell);
     document.body.appendChild(modal);
 
@@ -278,15 +282,47 @@
       }
     }
 
+    function consumeWheel(e){
+      if(!scroller.contains(e.target)) return;
+      e.preventDefault();
+      scroller.scrollTop+=e.deltaY;
+    }
+
+    function consumeTouchStart(e){
+      if(!scroller.contains(e.target)) return;
+      const t=e.touches[0];
+      scroller._touchY=t.clientY;
+    }
+
+    function consumeTouchMove(e){
+      if(scroller._touchY==null) return;
+      if(!scroller.contains(e.target)) return;
+      const t=e.touches[0];
+      const dy=scroller._touchY-t.clientY;
+      scroller._touchY=t.clientY;
+      e.preventDefault();
+      scroller.scrollTop+=dy;
+    }
+
     function openModal(){
       modal.classList.add('show');
       shell.classList.remove('rgpr-exit');
       blockScroll(true);
+      modal.addEventListener('wheel',consumeWheel,{passive:false});
+      modal.addEventListener('touchstart',consumeTouchStart,{passive:false});
+      modal.addEventListener('touchmove',consumeTouchMove,{passive:false});
     }
 
     function closeModal(){
       shell.classList.add('rgpr-exit');
-      setTimeout(()=>{modal.classList.remove('show'); shell.classList.remove('rgpr-exit'); blockScroll(false)},200);
+      setTimeout(()=>{
+        modal.classList.remove('show');
+        shell.classList.remove('rgpr-exit');
+        blockScroll(false);
+        modal.removeEventListener('wheel',consumeWheel);
+        modal.removeEventListener('touchstart',consumeTouchStart);
+        modal.removeEventListener('touchmove',consumeTouchMove);
+      },200);
     }
 
     modal.addEventListener('click',e=>{ if(e.target===modal) closeModal() });
