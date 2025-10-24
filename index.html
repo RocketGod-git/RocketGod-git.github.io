@@ -216,6 +216,199 @@
     </div>
     <script src="bouncing-image.js"></script>
     <script src="script.js"></script>
+
+<script>
+(function(){
+  function mountRGPRModal(cfg){
+    const user=cfg.user||'RocketGod-git';
+    const token=cfg.token||'';
+    const h2=document.querySelector(cfg.insertAfterSelector||'h2');
+    if(!h2)return;
+    const style=document.createElement('style');
+    style.textContent=`
+.rgpr-btn{display:inline-flex;align-items:center;gap:.6rem;margin-left:.75rem;padding:.55rem .9rem;border-radius:999px;border:1px solid rgba(0,255,160,.35);background:rgba(0,255,160,.08);color:#9effc9;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;position:relative;overflow:hidden}
+.rgpr-btn:before{content:"";position:absolute;inset:-2px;background:conic-gradient(from 0deg,#00ffa2 0%,transparent 25%,#00ffa2 50%,transparent 75%,#00ffa2 100%);filter:blur(12px);opacity:.25;animation:rgpr-rotate 6s linear infinite}
+.rgpr-btn .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 10px #00ffa2,0 0 24px #00ffa2}
+.rgpr-btn:hover{transform:translateY(-1px)}
+.rgpr-btn:active{transform:translateY(0)}
+@keyframes rgpr-rotate{to{transform:rotate(360deg)}}
+.rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:9999}
+.rgpr-modal.show{display:flex}
+.rgpr-shell{width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 10px 50px rgba(0,255,160,.15)}
+.rgpr-close{position:absolute;top:14px;right:16px;z-index:10;border:none;background:rgba(0,0,0,.35);color:#9effc9;border:1px solid rgba(0,255,160,.35);padding:.4rem .6rem;border-radius:10px;cursor:pointer}
+.rgpr-enter{animation:rgpr-in .32s ease}
+.rgpr-exit{animation:rgpr-out .22s ease forwards}
+@keyframes rgpr-in{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes rgpr-out{to{opacity:0;transform:translateY(6px) scale(.98)}}
+    `;
+    document.head.appendChild(style);
+    const btn=document.createElement('button');
+    btn.className='rgpr-btn';
+    btn.innerHTML=`<span class="dot"></span><span>View Pull Requests</span>`;
+    h2.appendChild(btn);
+    const modal=document.createElement('div');
+    modal.className='rgpr-modal';
+    const shell=document.createElement('div');
+    shell.className='rgpr-shell rgpr-enter';
+    const close=document.createElement('button');
+    close.className='rgpr-close';
+    close.textContent='Close';
+    const host=document.createElement('div');
+    shell.appendChild(close);
+    shell.appendChild(host);
+    modal.appendChild(shell);
+    document.body.appendChild(modal);
+    function openModal(){modal.classList.add('show');shell.classList.remove('rgpr-exit');shell.classList.add('rgpr-enter')}
+    function closeModal(){shell.classList.remove('rgpr-enter');shell.classList.add('rgpr-exit');setTimeout(()=>modal.classList.remove('show'),200)}
+    close.addEventListener('click',closeModal);
+    modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
+    btn.addEventListener('click',openModal);
+    const root=host.attachShadow({mode:'open'});
+    const wrap=document.createElement('div');
+    wrap.id='rg-pr-widget';
+    wrap.setAttribute('data-user',user);
+    if(token)wrap.setAttribute('data-token',token);
+    root.appendChild(wrap);
+    const css=`
+#rg-pr-widget{position:relative;isolation:isolate;overflow:hidden;background:#020403;color:#b7ffb7;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+#rg-pr-widget .rg-title{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#7bff7b;font-size:14px;margin:0;padding:18px 20px 10px}
+#rg-pr-widget .rg-title .dot{width:8px;height:8px;border-radius:50%;background:#00ffa2;box-shadow:0 0 14px #00ffa2,0 0 30px #00ffa2}
+#rg-pr-widget .tabs{display:flex;align-items:center;gap:10px;padding:0 20px 10px}
+#rg-pr-widget .tab{position:relative;display:inline-flex;align-items:center;gap:8px;padding:8px 12px;font-size:12px;color:#8bffb3;border:1px solid rgba(0,255,128,.2);border-radius:999px;background:rgba(0,255,128,.06);cursor:pointer;user-select:none;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+#rg-pr-widget .tab:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,255,128,.15)}
+#rg-pr-widget .tab.active{color:#00ffb0;border-color:rgba(0,255,128,.5);box-shadow:0 6px 24px rgba(0,255,128,.22)}
+#rg-pr-widget .tab .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,255,128,.25);border-top-color:#00ffa2;animation:rg-spin 1s linear infinite;display:none}
+#rg-pr-widget .tab.loading .spin{display:inline-block}
+#rg-pr-widget .bar{position:relative;height:3px;background:rgba(0,255,128,.12);border-radius:999px;overflow:hidden;margin:0 20px 14px}
+#rg-pr-widget .bar::after{content:"";position:absolute;inset:0;width:30%;background:linear-gradient(90deg,transparent,#00ffa2,transparent);animation:rg-scan 1.4s ease-in-out infinite;opacity:.6}
+#rg-pr-widget .stage{position:relative;padding:0 20px 20px}
+#rg-pr-widget .grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:10px;opacity:1;transform:scale(1);transition:opacity .28s ease,transform .28s ease}
+#rg-pr-widget .grid.fade{opacity:.0;transform:scale(.98)}
+@media(min-width:640px){#rg-pr-widget .grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1024px){#rg-pr-widget .grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+#rg-pr-widget .card{position:relative;background:linear-gradient(180deg,rgba(0,20,10,.5),rgba(0,10,5,.5));border:1px solid rgba(0,255,128,.18);border-radius:14px;padding:14px;backdrop-filter:blur(6px);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+#rg-pr-widget .card:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 10px 40px rgba(0,255,128,.2);border-color:rgba(0,255,128,.35)}
+#rg-pr-widget .title{font-size:13px;line-height:1.35;margin:0 0 10px;color:#eaffea;text-shadow:0 0 10px rgba(0,255,128,.25)}
+#rg-pr-widget .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11px;color:#8bffb3;opacity:.9}
+#rg-pr-widget .pill{padding:4px 8px;border:1px solid rgba(0,255,128,.25);border-radius:999px;background:rgba(0,255,128,.06);backdrop-filter:blur(4px)}
+#rg-pr-widget a.link{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#00ff9d;text-decoration:none}
+#rg-pr-widget a.link:hover{text-decoration:underline}
+#rg-pr-widget .footer{display:flex;justify-content:space-between;align-items:center;padding:0 20px 18px;font-size:11px;color:#7bff9a;opacity:.9}
+#rg-pr-widget .count{font-variant-numeric:tabular-nums}
+#rg-pr-widget .bgfx,.scanlines,.matrix,.transition{position:absolute;inset:0;pointer-events:none}
+#rg-pr-widget .bgfx{background:radial-gradient(1200px 400px at 10% -10%,rgba(0,255,128,.14),transparent),radial-gradient(1000px 400px at 110% 120%,rgba(0,255,128,.08),transparent)}
+#rg-pr-widget .scanlines{background:repeating-linear-gradient(180deg,rgba(0,0,0,.0) 0,rgba(0,0,0,.0) 2px,rgba(0,255,128,.04) 3px,rgba(0,255,128,.04) 3px);mix-blend-mode:overlay;opacity:.35}
+#rg-pr-widget .glow{position:absolute;inset:-60px;filter:blur(60px);background:conic-gradient(from 180deg at 50% 50%,rgba(0,255,128,.08),transparent 30%,rgba(0,255,128,.08) 60%,transparent 80%);animation:rg-rotate 18s linear infinite}
+#rg-pr-widget .matrix{opacity:.15;mask-image:linear-gradient(180deg,transparent,rgba(0,0,0,.9) 15%,rgba(0,0,0,.9) 85%,transparent)}
+#rg-pr-widget .matrix canvas{width:100%;height:100%}
+#rg-pr-widget .transition{opacity:0}
+#rg-pr-widget .transition.play{opacity:1;background:linear-gradient(90deg,transparent,rgba(0,255,128,.25) 40%,rgba(0,255,128,.6) 50%,rgba(0,255,128,.25) 60%,transparent),repeating-linear-gradient(0deg,rgba(0,255,128,.08) 0,rgba(0,255,128,.08) 2px,transparent 4px,transparent 6px);animation:rg-wipe .42s ease}
+@keyframes rg-spin{to{transform:rotate(360deg)}}
+@keyframes rg-scan{0%{left:-30%}100%{left:100%}}
+@keyframes rg-rotate{to{transform:rotate(360deg)}}
+@keyframes rg-wipe{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+    `;
+    const wstyle=document.createElement('style');
+    wstyle.textContent=css;
+    root.appendChild(wstyle);
+    wrap.innerHTML=`
+<div class="bgfx"></div>
+<div class="glow"></div>
+<div class="scanlines"></div>
+<div class="matrix"><canvas></canvas></div>
+<h3 class="rg-title"><span class="dot"></span><span>Pull Requests</span></h3>
+<div class="tabs"><div class="tab active"><div class="spin"></div><span>Merged</span></div><div class="tab"><div class="spin"></div><span>Open</span></div></div>
+<div class="bar"></div>
+<div class="stage"><div class="grid"></div><div class="transition"></div></div>
+<div class="footer"><span class="count">0 results</span><a class="link" href="https://github.com/${encodeURIComponent(user)}" target="_blank" rel="noopener">View Profile</a></div>
+    `;
+    const grid=wrap.querySelector('.grid');
+    const countEl=wrap.querySelector('.count');
+    const tabMerged=wrap.querySelectorAll('.tab')[0];
+    const tabOpen=wrap.querySelectorAll('.tab')[1];
+    const transitionFx=wrap.querySelector('.transition');
+    const canvas=wrap.querySelector('canvas');
+    const ctx=canvas.getContext('2d');
+    function resize(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight}
+    const ro=new ResizeObserver(resize); ro.observe(canvas); resize();
+    let drops=[];
+    function initRain(){const cols=Math.max(1,Math.floor(canvas.width/14));drops=new Array(cols).fill(0).map(()=>Math.floor(Math.random()*canvas.height))}
+    initRain();
+    function rain(){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,0,canvas.width,canvas.height);const letters='01ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&*+<>';for(let i=0;i<drops.length;i++){const text=letters.charAt(Math.floor(Math.random()*letters.length));ctx.fillStyle='rgba(0,255,160,0.9)';ctx.font='14px monospace';ctx.fillText(text,i*14,drops[i]*14);if(drops[i]*14>canvas.height&&(Math.random()>0.975))drops[i]=0;drops[i]++}requestAnimationFrame(rain)}
+    rain();
+    function headers(){const h=new Headers();h.set('Accept','application/vnd.github+json');h.set('User-Agent','rg-pr-widget');if(token)h.set('Authorization','Bearer '+token);return h}
+    async function ghSearch(q){
+      let items=[];
+      for(let p=1;p<=10;p++){
+        const url=`https://api.github.com/search/issues?q=${q}&per_page=100&page=${p}`;
+        const r=await fetch(url,{headers:headers()});
+        if(!r.ok)break;
+        const j=await r.json();
+        if(!j.items||j.items.length===0)break;
+        items=items.concat(j.items);
+        if(j.items.length<100)break;
+      }
+      const map=new Map(); for(const it of items) map.set(it.html_url,it);
+      return [...map.values()];
+    }
+    function timeAgo(d){const s=Math.floor((Date.now()-new Date(d).getTime())/1000);const u=[['y',31536000],['mo',2592000],['d',86400],['h',3600],['m',60],['s',1]];for(const [l,sec] of u){const v=Math.floor(s/sec);if(v>=1)return v+l+' ago'}return'now'}
+    function iconSvg(path){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('width','14');s.setAttribute('height','14');const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',path);p.setAttribute('fill','currentColor');s.appendChild(p);return s}
+    function animateIn(el,i){el.style.opacity='0';el.style.transform='translateY(10px) scale(.98)';el.style.transition='opacity .4s ease, transform .4s ease';setTimeout(()=>{el.style.opacity='1';el.style.transform='translateY(0) scale(1)'},40+(i*30))}
+    function render(items,label){
+      grid.innerHTML='';
+      items.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+      countEl.textContent=items.length+' results';
+      items.forEach((it,i)=>{
+        const card=document.createElement('div'); card.className='card';
+        const t=document.createElement('div'); t.className='title'; t.textContent=it.title;
+        const meta=document.createElement('div'); meta.className='meta';
+        const pill1=document.createElement('span'); pill1.className='pill'; pill1.textContent=label;
+        const pill2=document.createElement('span'); pill2.className='pill'; pill2.textContent=timeAgo(it.created_at);
+        meta.appendChild(pill1); meta.appendChild(pill2);
+        const link=document.createElement('a'); link.className='link'; link.textContent='View PR'; link.href=it.html_url; link.target='_blank'; link.rel='noopener'; link.prepend(iconSvg('M3 12c0-4.97 4.03-9 9-9s9 4.03 9 9-4.03 9-9 9-9-4.03-9-9zm10-3h-2v4h4v-2h-2zm-2 6h2v2h-2v-2z'));
+        card.appendChild(t); card.appendChild(meta); card.appendChild(link);
+        grid.appendChild(card); animateIn(card,i);
+      });
+    }
+    function playTransition(){
+      return new Promise(res=>{
+        grid.classList.add('fade');
+        transitionFx.classList.add('play');
+        const end=()=>{transitionFx.classList.remove('play');grid.classList.remove('fade');transitionFx.removeEventListener('animationend',end);res()};
+        transitionFx.addEventListener('animationend',end,{once:true});
+      });
+    }
+    let cache={merged:null,open:null};
+    async function load(tab){
+      tabMerged.classList.remove('active'); tabOpen.classList.remove('active');
+      tab.classList.add('active'); tab.classList.add('loading');
+      try{
+        await playTransition();
+        if(tab===tabMerged){
+          if(!cache.merged) cache.merged=await ghSearch(`author:${encodeURIComponent(user)}+type:pr+is:merged+is:public`);
+          render(cache.merged,'merged');
+        }else{
+          if(!cache.open) cache.open=await ghSearch(`author:${encodeURIComponent(user)}+type:pr+is:open+is:public`);
+          render(cache.open,'open');
+        }
+      }finally{
+        tab.classList.remove('loading');
+      }
+    }
+    tabMerged.addEventListener('click',()=>load(tabMerged));
+    tabOpen.addEventListener('click',()=>load(tabOpen));
+    load(tabMerged);
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    mountRGPRModal({
+      insertAfterSelector: '.repo-section h2',
+      user: 'RocketGod-git',
+      token: ''
+    });
+  });
+})();
+</script>
+
 </body>
 
 </html>
