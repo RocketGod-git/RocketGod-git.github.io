@@ -233,7 +233,7 @@
 @keyframes rgpr-rotate{to{transform:rotate(360deg)}}
 .rgpr-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:9999;overflow:hidden}
 .rgpr-modal.show{display:flex}
-.rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column}
+.rgpr-shell{position:relative;width:min(1100px,92vw);max-height:86vh;border-radius:18px;overflow:hidden;border:1px solid rgba(0,255,160,.25);box-shadow:0 14px 60px rgba(0,255,160,.18);background:#020403;transform-origin:center;animation:rgpr-in .34s ease;display:flex;flex-direction:column;overscroll-behavior:contain}
 .rgpr-shell::before{content:"";position:absolute;inset:0;background:
  radial-gradient(900px 260px at 15% -10%,rgba(0,255,160,.12),transparent),
  radial-gradient(800px 240px at 110% 120%,rgba(0,255,160,.08),transparent),
@@ -243,7 +243,7 @@
 @keyframes rgpr-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .rgpr-exit{animation:rgpr-out .2s ease forwards}
 @keyframes rgpr-out{to{opacity:0;transform:translateY(10px) scale(.98)}}
-.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none}
+.rgpr-scroll{overflow:auto;max-height:86vh;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
 .rgpr-scroll::-webkit-scrollbar{width:0;height:0}
 .rgpr-lock{overflow:hidden}
     `;
@@ -267,6 +267,8 @@
     document.body.appendChild(modal);
 
     let wheelBlocker=null, touchBlocker=null;
+    let quarantineOn=false;
+    const quarantineTypes=['touchstart','touchmove','touchend','wheel','mousewheel','mousemove','pointermove','keydown','keyup','mousedown','mouseup','click'];
 
     function blockScroll(enable){
       if(enable){
@@ -305,13 +307,37 @@
       scroller.scrollTop+=dy;
     }
 
+    function enableQuarantine(){
+      if(quarantineOn) return;
+      quarantineOn=true;
+      quarantineTypes.forEach(type=>{
+        shell.addEventListener(type,stopper,{capture:true,passive:false});
+      });
+    }
+
+    function disableQuarantine(){
+      if(!quarantineOn) return;
+      quarantineOn=false;
+      quarantineTypes.forEach(type=>{
+        shell.removeEventListener(type,stopper,{capture:true});
+      });
+    }
+
+    function stopper(e){
+      if(e.type==='wheel' || e.type==='mousewheel' || e.type==='touchmove'){
+        if(scroller.contains(e.target)) return;
+      }
+      e.stopPropagation();
+    }
+
     function openModal(){
       modal.classList.add('show');
       shell.classList.remove('rgpr-exit');
       blockScroll(true);
-      modal.addEventListener('wheel',consumeWheel,{passive:false});
-      modal.addEventListener('touchstart',consumeTouchStart,{passive:false});
-      modal.addEventListener('touchmove',consumeTouchMove,{passive:false});
+      enableQuarantine();
+      modal.addEventListener('wheel',consumeWheel,{passive:false,capture:true});
+      modal.addEventListener('touchstart',consumeTouchStart,{passive:false,capture:true});
+      modal.addEventListener('touchmove',consumeTouchMove,{passive:false,capture:true});
     }
 
     function closeModal(){
@@ -320,9 +346,10 @@
         modal.classList.remove('show');
         shell.classList.remove('rgpr-exit');
         blockScroll(false);
-        modal.removeEventListener('wheel',consumeWheel);
-        modal.removeEventListener('touchstart',consumeTouchStart);
-        modal.removeEventListener('touchmove',consumeTouchMove);
+        disableQuarantine();
+        modal.removeEventListener('wheel',consumeWheel,{capture:true});
+        modal.removeEventListener('touchstart',consumeTouchStart,{capture:true});
+        modal.removeEventListener('touchmove',consumeTouchMove,{capture:true});
       },200);
     }
 
