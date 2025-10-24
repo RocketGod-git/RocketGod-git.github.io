@@ -307,29 +307,6 @@
       if(!shell.contains(e.target)){ e.stopPropagation(); e.preventDefault(); }
     }
 
-    function openModal(){
-      modal.classList.add('show');
-      shell.classList.remove('rgpr-exit');
-      blockBackground(true);
-      enableQuarantine();
-      requestAnimationFrame(resizeCanvas);
-      setTimeout(resizeCanvas,50);
-      setTimeout(resizeCanvas,200);
-    }
-
-    function closeModal(){
-      shell.classList.add('rgpr-exit');
-      setTimeout(()=>{
-        modal.classList.remove('show');
-        shell.classList.remove('rgpr-exit');
-        blockBackground(false);
-        disableQuarantine();
-      },200);
-    }
-
-    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal() });
-    btn.addEventListener('click',openModal);
-
     const root=host.attachShadow({mode:'open'});
     const wrap=document.createElement('div');
     wrap.id='rg-pr-widget';
@@ -384,7 +361,7 @@
 <div class="scanlines"></div>
 <div class="matrix"><canvas></canvas></div>
 <h3 class="rg-title"><span class="dot"></span><span>Pull Requests</span></h3>
-<div class="tabs"><div class="tab active"><div class="spin"></div><span>Merged</span></div><div class="tab"><div class="spin"></div><span>Open</span></div></div>
+<div class="tabs"><div class="tab active" data-key="merged"><div class="spin"></div><span>Merged</span></div><div class="tab" data-key="open"><div class="spin"></div><span>Open</span></div></div>
 <div class="bar"></div>
 <div class="stage"><div class="grid"></div><div class="transition"></div></div>
 <div class="footer"><span class="count">0 results</span><a class="link" href="https://github.com/${encodeURIComponent(user)}" target="_blank" rel="noopener">View Profile</a></div>
@@ -392,10 +369,12 @@
 
     const grid=wrap.querySelector('.grid');
     const countEl=wrap.querySelector('.count');
-    const tabMerged=wrap.querySelectorAll('.tab')[0];
-    const tabOpen=wrap.querySelectorAll('.tab')[1];
+    const tabs=Array.from(wrap.querySelectorAll('.tab'));
+    const tabMerged=tabs.find(t=>t.dataset.key==='merged');
+    const tabOpen=tabs.find(t=>t.dataset.key==='open');
     const transitionFx=wrap.querySelector('.transition');
     const canvas=wrap.querySelector('canvas');
+    const glow=wrap.querySelector('.glow');
     const ctx=canvas.getContext('2d');
 
     function resizeCanvas(){
@@ -409,10 +388,20 @@
       initRain();
     }
 
+    function restartCSS(el,anim){
+      if(!el) return;
+      el.style.animation='none';
+      void el.offsetHeight;
+      el.style.animation=anim;
+    }
+
+    function refreshMatrix(){
+      resizeCanvas();
+      restartCSS(glow,'rg-rotate 18s linear infinite');
+    }
+
     const ro=new ResizeObserver(resizeCanvas);
     ro.observe(wrap);
-    window.addEventListener('orientationchange',()=>setTimeout(resizeCanvas,150));
-    document.addEventListener('visibilitychange',()=>{ if(!document.hidden) setTimeout(resizeCanvas,50) });
 
     let drops=[];
     function initRain(){
@@ -472,6 +461,7 @@
         card.appendChild(t); card.appendChild(meta); card.appendChild(link);
         grid.appendChild(card); animateIn(card,i);
       });
+      refreshMatrix();
     }
 
     function playTransition(){
@@ -485,7 +475,7 @@
 
     let cache={merged:null,open:null};
     async function load(tab){
-      tabMerged.classList.remove('active'); tabOpen.classList.remove('active');
+      tabs.forEach(t=>t.classList.remove('active'));
       tab.classList.add('active'); tab.classList.add('loading');
       try{
         await playTransition();
@@ -498,11 +488,35 @@
         }
       }finally{
         tab.classList.remove('loading');
+        refreshMatrix();
+        requestAnimationFrame(refreshMatrix);
       }
     }
 
-    tabMerged.addEventListener('click',()=>load(tabMerged));
-    tabOpen.addEventListener('click',()=>load(tabOpen));
+    tabs.forEach(t=>t.addEventListener('click',()=>load(t)));
+
+    function openModal(){
+      modal.classList.add('show');
+      shell.classList.remove('rgpr-exit');
+      blockBackground(true);
+      enableQuarantine();
+      requestAnimationFrame(()=>{ resizeCanvas(); refreshMatrix(); });
+      setTimeout(()=>{ resizeCanvas(); refreshMatrix(); },120);
+    }
+
+    function closeModal(){
+      shell.classList.add('rgpr-exit');
+      setTimeout(()=>{
+        modal.classList.remove('show');
+        shell.classList.remove('rgpr-exit');
+        blockBackground(false);
+        disableQuarantine();
+      },200);
+    }
+
+    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal() });
+    btn.addEventListener('click',openModal);
+
     load(tabMerged);
   }
 
