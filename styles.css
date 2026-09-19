@@ -375,3 +375,7 @@ h1 {
     color: var(--accent-color);
     text-shadow: none;
 }
+
+h3:not(.project-category) + .project-category {
+    margin-top: 3.5rem;
+}
