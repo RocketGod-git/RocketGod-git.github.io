@@ -94,6 +94,13 @@
       </esp-web-install-button>
     </div>
     <p class="muted" style="margin-top:12px">Board doesn't show up in the port list? Hold its <code>BOOT</code> button while plugging it in, then try again.</p>
+    <div id="flashlog-wrap" hidden style="margin-top:14px">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;letter-spacing:2px;color:var(--glow)">CONSOLE</span>
+        <button id="flashlog-clear" class="btn alt" style="padding:6px 10px;font-size:12px">clear</button>
+      </div>
+      <pre id="flashlog" style="max-height:260px;overflow:auto;margin:0;font-size:12px;line-height:1.45"></pre>
+    </div>
     <ol start="4">
       <li>Power the board. In <strong>WarBLE Go</strong> turn the Wi-Fi bridge on once — it links by itself from then on.</li>
     </ol>
@@ -114,5 +121,44 @@ esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-b
 
   <p class="muted" style="margin-top:34px">For help, find RocketGod in the Wardriving channel at <a href="https://discord.gg/thepirates">https://discord.gg/thepirates</a> — "The Pirates' Plunder".</p>
 </main>
+<script>
+// Live console under the flash button: mirrors everything the flasher says (esptool-js prints its progress —
+// chip detected, erase, "Writing at 0x… (42%)", hash verified — to console.log; the dialog's own logger goes
+// through here too) while the install dialog is on screen, and keeps the result readable after it closes.
+(() => {
+  const wrap = document.getElementById('flashlog-wrap'), pre = document.getElementById('flashlog');
+  const fmt = (args) => args.map(a => typeof a === 'string' ? a : (() => { try { return JSON.stringify(a); } catch { return String(a); } })()).join(' ');
+  const add = (kind, args) => {
+    const line = fmt(args).replace(/?
+$/, ''); if (!line.trim()) return;
+    const ts = new Date().toTimeString().slice(0, 8);
+    const el = document.createElement('div'); el.textContent = `${ts}  ${line}`;
+    if (kind === 'error' || /error|fail/i.test(line)) el.style.color = 'var(--danger)';
+    else if (/verified|done|success|leaving|finished|hard reset/i.test(line)) el.style.color = 'var(--glow)';
+    else if (/writing|erasing|flash|connect|detect|chip/i.test(line)) el.style.color = 'var(--ink)';
+    else el.style.color = 'var(--muted)';
+    pre.appendChild(el); while (pre.childElementCount > 1200) pre.removeChild(pre.firstChild);
+    pre.scrollTop = pre.scrollHeight; wrap.hidden = false;
+  };
+  const pageLogger = { log: (...a) => add('log', a), error: (...a) => add('error', a), debug: (...a) => add('debug', a) };
+  const orig = { log: console.log, error: console.error, warn: console.warn };
+  let hooked = 0;
+  const hook = () => { if (hooked++) return;
+    console.log = (...a) => { orig.log.apply(console, a); add('log', a); };
+    console.error = (...a) => { orig.error.apply(console, a); add('error', a); };
+    console.warn = (...a) => { orig.warn.apply(console, a); add('log', a); };
+  };
+  const unhook = () => { if (--hooked > 0) return; hooked = 0; console.log = orig.log; console.error = orig.error; console.warn = orig.warn; };
+  new MutationObserver(muts => {
+    for (const m of muts) for (const n of m.addedNodes) {
+      if (n.nodeType === 1 && n.tagName && n.tagName.toLowerCase() === 'ewt-install-dialog') {
+        add('log', ['— install dialog opened —']); n.logger = pageLogger; hook();
+        n.addEventListener('closed', () => { add('log', ['— dialog closed —']); unhook(); }, { once: true });
+      }
+    }
+  }).observe(document.body, { childList: true });
+  document.getElementById('flashlog-clear').addEventListener('click', () => { pre.textContent = ''; });
+})();
+</script>
 </body>
 </html>
