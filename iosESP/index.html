@@ -25,6 +25,49 @@
   .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   ol li { margin: 6px 0; }
   esp-web-install-button { --esp-tools-button-color: var(--glow); --esp-tools-button-text-color: var(--paper); --esp-tools-button-border-radius: 8px; }
+  /* ESP Web Tools' dialog is Material 3, appended to <body>: theme it through the M3 tokens it reads. */
+  body {
+    --md-sys-color-surface: var(--surface);
+    --md-sys-color-surface-container: var(--surface);
+    --md-sys-color-surface-container-low: var(--surface);
+    --md-sys-color-surface-container-high: var(--surface);
+    --md-sys-color-surface-container-highest: #16211F;
+    --md-dialog-container-color: var(--surface);
+    --md-dialog-container-shape: 10px;
+    --md-sys-color-on-surface: var(--ink);
+    --md-sys-color-on-surface-variant: var(--muted);
+    --md-sys-color-outline: var(--line);
+    --md-sys-color-outline-variant: var(--line);
+    --md-sys-color-primary: var(--glow);
+    --md-sys-color-on-primary: var(--paper);
+    --md-sys-color-primary-container: var(--glow);
+    --md-sys-color-on-primary-container: var(--paper);
+    --md-sys-color-secondary-container: #16211F;
+    --md-sys-color-on-secondary-container: var(--ink);
+    --md-sys-color-tertiary: var(--ochre);
+    --md-sys-color-tertiary-container: #16211F;
+    --md-sys-color-error: var(--danger);
+    --md-sys-color-on-error-container: var(--danger);
+    --md-sys-color-shadow: #000;
+    --md-ref-typeface-plain: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --md-ref-typeface-brand: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --md-menu-container-color: var(--surface);
+    --md-list-item-label-text-color: var(--ink);
+    --md-list-item-supporting-text-color: var(--muted);
+    --md-menu-item-trailing-icon-color: var(--muted);
+    --md-checkbox-outline-color: var(--muted);
+    --md-checkbox-selected-container-color: var(--glow);
+    --md-checkbox-selected-icon-color: var(--paper);
+    --md-filled-text-field-container-color: var(--paper);
+    --md-filled-select-text-field-container-color: var(--paper);
+    --text-color: var(--ink);
+    --danger-color: var(--danger);
+    --esp-tools-success-color: var(--glow);
+    --esp-tools-error-color: var(--danger);
+    --esp-tools-progress-color: var(--glow);
+    --esp-tools-log-background: #000;
+    --esp-tools-log-text-color: var(--ink);
+  }
 </style>
 </head>
 <body>
