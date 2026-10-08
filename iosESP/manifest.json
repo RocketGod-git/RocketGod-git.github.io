@@ -1,0 +1,43 @@
+{
+  "name": "iosESP (WarBLE Go Wi-Fi bridge)",
+  "version": "latest",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "bins/esp32c3/wardrive-bridge-merged.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C5",
+      "parts": [
+        {
+          "path": "bins/esp32c5/wardrive-bridge-merged.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        {
+          "path": "bins/esp32c6/wardrive-bridge-merged.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "bins/esp32s3/wardrive-bridge-merged.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
