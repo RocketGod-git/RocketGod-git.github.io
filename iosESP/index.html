@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>iosESP firmware</title>
-<meta name="description" content="iosESP — the one-board ESP32 Wi-Fi bridge firmware for WarBLE Go. Download, flash, done.">
+<meta name="description" content="iosESP — the one-board ESP32 Wi-Fi bridge firmware for WarBLE Go. Flash it from your browser.">
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 <style>
   :root { --paper:#06090A; --surface:#0E1618; --ink:#E9F3F0; --muted:#94A9A4; --line:#2C3D3B; --glow:#37ECCB; --ochre:#E0A53C; --danger:#FF5B52; }
   * { box-sizing: border-box; }
@@ -14,20 +15,18 @@
   h1 span { color: var(--glow); }
   .sub { color: var(--muted); margin: 0 0 28px; }
   h2 { font-size: 13px; letter-spacing: 3px; color: var(--glow); margin: 34px 0 10px; text-transform: uppercase; }
-  p, li { color: var(--ink); }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
-  .btn { display:inline-block; background: var(--glow); color: var(--paper); font-weight: 700; padding: 14px 20px; border-radius: 8px; text-decoration: none; letter-spacing: .5px; }
+  .btn { display:inline-block; background: var(--glow); color: var(--paper); font-weight: 700; padding: 14px 20px; border-radius: 8px; text-decoration: none; letter-spacing: .5px; border: 0; font: inherit; cursor: pointer; }
   .btn.alt { background: transparent; color: var(--ink); border: 1px solid var(--line); }
   .warn { border-color: rgba(255,91,82,.6); }
   .warn h2 { color: var(--danger); margin-top: 0; }
   code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 4px; }
   pre { background: #000; border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 13px; }
-  table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  td, th { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left; }
-  th { color: var(--muted); font-weight: 600; }
   .muted { color: var(--muted); }
   a { color: var(--glow); }
   .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  ol li { margin: 6px 0; }
+  esp-web-install-button { --esp-tools-button-color: var(--glow); --esp-tools-button-text-color: var(--paper); --esp-tools-button-border-radius: 8px; }
 </style>
 </head>
 <body>
@@ -35,58 +34,44 @@
   <h1>ios<span>ESP</span></h1>
   <p class="sub">The one-board ESP32 Wi-Fi bridge for <strong>WarBLE Go</strong>. iPhones can't scan Wi-Fi — this board does it for you and streams every network it hears to the app over Bluetooth. No pairing, no setup, no terminal.</p>
 
-  <div class="row">
-    <a class="btn" href="iosESP.zip">Download iosESP firmware (.zip)</a>
-    <a class="btn alt" href="https://discord.gg/thepirates">#wardriving on Discord</a>
-  </div>
-  <p class="muted" style="margin-top:10px">Prebuilt for ESP32-C3 · C5 · C6 · S3 (and the source for any other BLE-capable ESP32). ESP32-S2 has no Bluetooth and won't work.</p>
-
-  <h2>Flash it</h2>
+  <h2>Flash it from your browser</h2>
   <div class="card">
     <ol>
-      <li>Unzip. Pick your chip's folder under <code>firmware-bins/</code>.</li>
-      <li>Plug the board in over USB and run (replace <code>&lt;chip&gt;</code> and <code>&lt;PORT&gt;</code>):</li>
+      <li>Plug <strong>any BLE-capable ESP32</strong> (C3, C5, C6, S3…) into a computer over USB.</li>
+      <li>Open this page in <strong>Chrome or Edge on that computer</strong> (iPhone and Safari can't talk to USB).</li>
+      <li>Hit the button, pick the board's port, and let it run. It detects the chip and flashes the matching build — about a minute.</li>
     </ol>
-<pre>esptool --chip &lt;chip&gt; -p &lt;PORT&gt; erase_flash
-esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-bridge-merged.bin</pre>
-    <p class="muted">One merged file at <code>0x0</code> — the offsets are baked in (the C5's bootloader lives at 0x2000; the merged image already handles that, so don't hand-flash a C5 bootloader to 0x0). No esptool? <a href="https://web.esphome.io/">ESP Web Flasher</a> in Chrome works too: connect, pick the merged .bin, flash at 0x0.</p>
-    <ol start="3">
+    <div class="row" style="margin-top:8px">
+      <esp-web-install-button manifest="manifest.json">
+        <button slot="activate" class="btn">Connect &amp; flash iosESP</button>
+        <span slot="unsupported" class="muted">Your browser can't do USB flashing — use Chrome or Edge on a computer, or the manual steps below.</span>
+        <span slot="not-allowed" class="muted">This page must be served over HTTPS for USB flashing.</span>
+      </esp-web-install-button>
+    </div>
+    <p class="muted" style="margin-top:12px">Board doesn't show up in the port list? Hold its <code>BOOT</code> button while plugging it in, then try again.</p>
+    <ol start="4">
       <li>Power the board. In <strong>WarBLE Go</strong> turn the Wi-Fi bridge on once — it links by itself from then on.</li>
     </ol>
   </div>
 
-  <h2>Status LED</h2>
+  <h2>Or flash it yourself</h2>
   <div class="card">
-    <table>
-      <tr><th>State</th><th>LED</th></tr>
-      <tr><td>Powered, Bluetooth not up yet</td><td>off</td></tr>
-      <tr><td>Advertising, waiting for the phone</td><td>slow blue blink</td></tr>
-      <tr><td>Linked and streaming networks</td><td>solid green</td></tr>
-    </table>
-    <p class="muted">Default LED is the onboard WS2812 on GPIO 8 (most C3/C6 devkits). A different pin or a plain LED: change it in <code>idf.py menuconfig → WarBLE Wardrive Bridge</code> and rebuild from <code>source/</code>. The bridge works either way.</p>
+    <div class="row">
+      <a class="btn alt" href="iosESP.zip">Download iosESP.zip</a>
+      <span class="muted">prebuilt bins for ESP32-C3 · C5 · C6 · S3, plus the source for any other BLE-capable ESP32 (the S2 has no Bluetooth)</span>
+    </div>
+    <p style="margin-top:14px">Unzip, pick your chip's folder under <code>firmware-bins/</code>, then (replace <code>&lt;chip&gt;</code> and <code>&lt;PORT&gt;</code>):</p>
+<pre>esptool --chip &lt;chip&gt; -p &lt;PORT&gt; erase_flash
+esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-bridge-merged.bin</pre>
+    <p class="muted">One merged file at <code>0x0</code> — the offsets are baked in (the C5's bootloader lives at 0x2000; the merged image already handles that). Building from <code>source/</code>: <code>idf.py set-target &lt;chip&gt; &amp;&amp; idf.py build flash</code>.</p>
   </div>
 
   <div class="card warn" style="margin-top:34px">
     <h2>Running stock GhostESP? It links but won't scan</h2>
-    <p>Stock GhostESP's bridge is a <strong>two-board</strong> design: a Bluetooth "core" wired to a second "peer" radio that does the scanning. A single stock board connects to WarBLE Go fine, then answers every command with <code>comm link down</code> — linked, 0 networks. WarBLE Go tells you when it sees that.</p>
-    <p>Two ways out:</p>
-    <ul>
-      <li><strong>Flash iosESP</strong> (the zip above) — purpose-built, one board, nothing to configure. Recommended.</li>
-      <li><strong>Keep full GhostESP</strong> and apply the <code>ghostlink-solo/</code> patch included in the zip: it lets an unpaired board scan on its own chip. Instructions in that folder's README.</li>
-    </ul>
+    <p>Stock GhostESP's bridge is a <strong>two-board</strong> design: a Bluetooth "core" wired to a second "peer" radio that does the scanning. A single stock board connects to WarBLE Go fine, then answers every command with <code>comm link down</code> — linked, 0 networks. WarBLE Go tells you when it sees that. The fix is the button at the top: flash iosESP onto the board.</p>
   </div>
 
-  <h2>What's in the zip</h2>
-  <div class="card">
-    <table>
-      <tr><td><code>firmware-bins/&lt;chip&gt;/</code></td><td>merged .bin (flash at 0x0), the three separate bins, <code>flash_args</code>, <code>FLASH.txt</code></td></tr>
-      <tr><td><code>source/</code></td><td>the full ESP-IDF project (<code>idf.py set-target &lt;chip&gt; &amp;&amp; idf.py build flash</code>)</td></tr>
-      <tr><td><code>ghostlink-solo/</code></td><td>the patch + README for running full GhostESP on one board</td></tr>
-      <tr><td><code>README.md</code></td><td>how it works, tuning notes</td></tr>
-    </table>
-  </div>
-
-  <p class="muted" style="margin-top:34px">Built from <a href="https://github.com/RocketGod-git">RocketGod-git</a>. Questions, boards that misbehave, bragging: #wardriving on Discord.</p>
+  <p class="muted" style="margin-top:34px">For help, find RocketGod in the Wardriving channel at <a href="https://discord.gg/thepirates">https://discord.gg/thepirates</a> — "The Pirates' Plunder".</p>
 </main>
 </body>
 </html>
