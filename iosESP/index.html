@@ -128,7 +128,7 @@ function el(tag, cls, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
-fetch("version.json", { cache: "no-cache" })
+fetch(`version.json?t=${Date.now()}`, { cache: "no-store" })
   .then(r => (r.ok ? r.json() : null))
   .then(v => {
     if (!v || !v.latest) return;
@@ -137,7 +137,9 @@ fetch("version.json", { cache: "no-cache" })
     document.getElementById("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
     document.getElementById("ver").hidden = false;
     btn.textContent = `Connect & flash iosESP ${v.latest}`;
-    document.getElementById("zip").textContent = `Download iosESP ${v.latest} (.zip)`;
+    const zip = document.getElementById("zip");
+    zip.textContent = `Download iosESP ${v.latest} (.zip)`;
+    zip.href = `iosESP.zip?v=${encodeURIComponent(v.latest)}`;
     const box = document.getElementById("releases");
     for (const r of v.releases || []) {
       const item = el("div", "rel");
@@ -194,7 +196,7 @@ btn.addEventListener("click", async () => {
     if (!path) throw new Error(`${chip} isn't supported. iosESP runs on ESP32-C3, C5, C6 and S3.`);
 
     state("downloading", "busy");
-    const res = await fetch(path, { cache: "no-cache" });
+    const res = await fetch(`${path}?v=${encodeURIComponent(latest || Date.now())}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`Couldn't download the ${chip} build (HTTP ${res.status}).`);
     const data = new Uint8Array(await res.arrayBuffer());
     line(`Downloaded iosESP ${latest ? latest + " " : ""}for ${chip} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
