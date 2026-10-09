@@ -1,7 +1,16 @@
 {
-  "latest": "1.2.1",
+  "latest": "1.2.2",
   "date": "2026-10-09",
   "releases": [
+    {
+      "version": "1.2.2",
+      "date": "2026-10-09",
+      "notes": [
+        "Boot report: on every connect the board tells the app its firmware, slot, last reset reason and whether an update was rolled back.",
+        "If freshly updated firmware doesn't start within 30 seconds, the board restarts and goes back to the previous version on its own.",
+        "info also shows the boot report."
+      ]
+    },
     {
       "version": "1.2.1",
       "date": "2026-10-09",
