@@ -132,6 +132,7 @@ btn.addEventListener("click", async () => {
     state("connecting", "busy");
     line("Connecting…", "hi");
     const { ESPLoader, Transport } = await import(ESPTOOL);
+    if (port.readable || port.writable) { try { await port.close(); } catch {} }
     transport = new Transport(port, false);
     const loader = new ESPLoader({ transport, baudrate: 460800, terminal, debugLogging: false });
     const desc = await loader.main();
@@ -159,8 +160,13 @@ btn.addEventListener("click", async () => {
     line("Done. The board restarted into iosESP — turn on the Wi-Fi bridge in Wardrive Go.", "ok");
     state("done", "ok");
   } catch (e) {
-    line(`Failed: ${e && e.message ? e.message : e}`, "err");
-    line("Hold the board's BOOT button, tap RESET (or replug while holding BOOT), release BOOT, then try again.", "hi");
+    const msg = e && e.message ? e.message : String(e);
+    line(`Failed: ${msg}`, "err");
+    if (/failed to open serial port|port is already open|access denied/i.test(msg)) {
+      line("The port is busy. Close any other app or tab using it (Arduino IDE, serial monitor), or unplug and replug the board, then try again.", "hi");
+    } else {
+      line("Hold the board's BOOT button, tap RESET (or replug while holding BOOT), release BOOT, then try again.", "hi");
+    }
     state("failed", "err");
   } finally {
     try { if (transport) await transport.disconnect(); } catch {}
