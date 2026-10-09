@@ -1,7 +1,16 @@
 {
-  "latest": "1.2",
+  "latest": "1.2.1",
   "date": "2026-10-09",
   "releases": [
+    {
+      "version": "1.2.1",
+      "date": "2026-10-09",
+      "notes": [
+        "Terminal commands in Wardrive Go: help, info, status, ch, led, reboot. Unknown commands show the list.",
+        "led off keeps the status light dark, and the setting survives reboots.",
+        "Installs over Bluetooth on boards already running 1.2."
+      ]
+    },
     {
       "version": "1.2",
       "date": "2026-10-09",
