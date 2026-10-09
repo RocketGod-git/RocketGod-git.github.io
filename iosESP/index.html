@@ -156,7 +156,8 @@ btn.addEventListener("click", async () => {
       reportProgress: (_i, written, total) => progress(written / total),
     });
     progress(1);
-    await loader.after("hard_reset");
+    const nativeUsb = (port.getInfo ? port.getInfo().usbProductId : 0) === 0x1001;
+    await loader.after("hard_reset", nativeUsb);
     line("Done. The board restarted into iosESP — turn on the Wi-Fi bridge in Wardrive Go.", "ok");
     state("done", "ok");
   } catch (e) {
