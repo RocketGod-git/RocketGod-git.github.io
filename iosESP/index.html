@@ -25,7 +25,6 @@
   .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   ol li { margin: 6px 0; }
   esp-web-install-button { --esp-tools-button-color: var(--glow); --esp-tools-button-text-color: var(--paper); --esp-tools-button-border-radius: 8px; }
-  /* ESP Web Tools' dialog is Material 3, appended to <body>: theme it through the M3 tokens it reads. */
   body {
     --md-sys-color-surface: var(--surface);
     --md-sys-color-surface-container: var(--surface);
@@ -122,9 +121,6 @@ esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-b
   <p class="muted" style="margin-top:34px">For help, find RocketGod in the Wardriving channel at <a href="https://discord.gg/thepirates">https://discord.gg/thepirates</a> — "The Pirates' Plunder".</p>
 </main>
 <script>
-// Live console under the flash button: mirrors everything the flasher says (esptool-js prints its progress —
-// chip detected, erase, "Writing at 0x… (42%)", hash verified — to console.log; the dialog's own logger goes
-// through here too) while the install dialog is on screen, and keeps the result readable after it closes.
 (() => {
   const wrap = document.getElementById('flashlog-wrap'), pre = document.getElementById('flashlog');
   const fmt = (args) => args.map(a => typeof a === 'string' ? a : (() => { try { return JSON.stringify(a); } catch { return String(a); } })()).join(' ');

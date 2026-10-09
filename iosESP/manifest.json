@@ -1,5 +1,5 @@
 {
-  "name": "iosESP (WarBLE Go Wi-Fi bridge)",
+  "name": "iosESP (Wardrive Go Wi-Fi bridge)",
   "version": "latest",
   "new_install_prompt_erase": true,
   "builds": [
