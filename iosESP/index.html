@@ -35,6 +35,16 @@
   .bar > div { height: 100%; width: 0; background: var(--glow); transition: width .2s; }
   #log { margin: 0; border: 0; border-radius: 0; max-height: 280px; min-height: 120px; overflow: auto; font-size: 12px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
   #log .ok { color: var(--glow); } #log .err { color: var(--danger); } #log .dim { color: var(--muted); } #log .hi { color: var(--ink); }
+  .ver { display:inline-flex; gap: 10px; align-items: center; margin: -14px 0 28px; font-size: 13px; color: var(--muted); }
+  .ver b { color: var(--paper); background: var(--glow); padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+  .rel { padding: 12px 0; border-top: 1px solid var(--line); }
+  .rel:first-child { border-top: 0; padding-top: 0; }
+  .rel h3 { margin: 0 0 6px; font-size: 15px; }
+  .rel h3 span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+  .rel h3 em { color: var(--glow); font-style: normal; font-size: 11px; letter-spacing: 2px; margin-left: 8px; }
+  .rel ul { margin: 0; padding-left: 20px; color: var(--muted); }
+  .rel li { margin: 3px 0; }
+  .update-note { margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -45,6 +55,7 @@
     <a class="btn alt" href="https://apps.apple.com/app/id6783390938">Get Wardrive Go on the App Store</a>
     <span class="muted">free · iPhone</span>
   </div>
+  <div class="ver" id="ver" hidden><b id="ver-num"></b><span id="ver-date"></span></div>
 
   <h2>Flash it from your browser</h2>
   <div class="card">
@@ -64,12 +75,16 @@
     <ol start="4">
       <li>Power the board. In <strong>Wardrive Go</strong> turn the Wi-Fi bridge on — it links by itself.</li>
     </ol>
+    <p class="muted update-note">Already on 1.2 or newer? Updates install from Wardrive Go over Bluetooth — the app tells you when one is out. Boards on 1.1.1 or older need this USB flash once.</p>
   </div>
+
+  <h2 id="releases-h" hidden>What's new</h2>
+  <div class="card" id="releases" hidden></div>
 
   <h2>Or flash it yourself</h2>
   <div class="card">
     <div class="row">
-      <a class="btn alt" href="iosESP.zip">Download iosESP.zip</a>
+      <a class="btn alt" id="zip" href="iosESP.zip">Download iosESP.zip</a>
       <span class="muted">prebuilt bins for ESP32-C3 · C5 · C6 · S3, plus the source</span>
     </div>
     <p style="margin-top:14px">Unzip, pick your chip's folder under <code>firmware-bins/</code>, then (replace <code>&lt;chip&gt;</code> and <code>&lt;PORT&gt;</code>):</p>
@@ -101,6 +116,43 @@ function line(text, cls = "dim") {
   logEl.scrollTop = logEl.scrollHeight;
 }
 function state(text, cls = "") { stateEl.textContent = text; stateEl.className = "state " + cls; }
+
+let latest = "";
+function fmtDate(s) {
+  const d = new Date(`${s}T12:00:00`);
+  return isNaN(d) ? s : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+fetch("version.json", { cache: "no-cache" })
+  .then(r => (r.ok ? r.json() : null))
+  .then(v => {
+    if (!v || !v.latest) return;
+    latest = v.latest;
+    document.getElementById("ver-num").textContent = `iosESP ${v.latest}`;
+    document.getElementById("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
+    document.getElementById("ver").hidden = false;
+    btn.textContent = `Connect & flash iosESP ${v.latest}`;
+    document.getElementById("zip").textContent = `Download iosESP ${v.latest} (.zip)`;
+    const box = document.getElementById("releases");
+    for (const r of v.releases || []) {
+      const item = el("div", "rel");
+      const h = el("h3", "", r.version);
+      if (r.date) h.appendChild(el("span", "", fmtDate(r.date)));
+      if (r.version === v.latest) h.appendChild(el("em", "", "LATEST"));
+      item.appendChild(h);
+      const ul = el("ul");
+      for (const n of r.notes || []) ul.appendChild(el("li", "", n));
+      item.appendChild(ul);
+      box.appendChild(item);
+    }
+    if (box.childElementCount) { box.hidden = false; document.getElementById("releases-h").hidden = false; }
+  })
+  .catch(() => {});
 function progress(f) { bar.style.width = `${Math.round(Math.max(0, Math.min(1, f)) * 100)}%`; }
 
 const terminal = {
@@ -145,7 +197,7 @@ btn.addEventListener("click", async () => {
     const res = await fetch(path, { cache: "no-cache" });
     if (!res.ok) throw new Error(`Couldn't download the ${chip} build (HTTP ${res.status}).`);
     const data = new Uint8Array(await res.arrayBuffer());
-    line(`Downloaded the ${chip} build (${(data.length / 1024).toFixed(0)} KB).`, "hi");
+    line(`Downloaded iosESP ${latest ? latest + " " : ""}for ${chip} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
 
     state("erasing + flashing", "busy");
     line("Erasing and flashing — keep the board plugged in…", "hi");
@@ -158,7 +210,7 @@ btn.addEventListener("click", async () => {
     progress(1);
     const nativeUsb = (port.getInfo ? port.getInfo().usbProductId : 0) === 0x1001;
     await loader.after("hard_reset", nativeUsb);
-    line("Done. The board restarted into iosESP — turn on the Wi-Fi bridge in Wardrive Go.", "ok");
+    line(`Done. The board restarted into iosESP${latest ? " " + latest : ""} — turn on the Wi-Fi bridge in Wardrive Go.`, "ok");
     state("done", "ok");
   } catch (e) {
     const msg = e && e.message ? e.message : String(e);

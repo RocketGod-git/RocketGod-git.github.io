@@ -1,1 +1,38 @@
-{"latest":"1.2"}
+{
+  "latest": "1.2",
+  "date": "2026-10-09",
+  "releases": [
+    {
+      "version": "1.2",
+      "date": "2026-10-09",
+      "notes": [
+        "Firmware updates install over Bluetooth from Wardrive Go — one tap, no computer.",
+        "New flash layout: boards on 1.1.1 or older need one USB flash to reach 1.2. After that, updates come over Bluetooth.",
+        "If a new version fails to start, the board rolls back to the previous one."
+      ]
+    },
+    {
+      "version": "1.1.1",
+      "date": "2026-10-09",
+      "notes": [
+        "The terminal's AP count shows the APs heard in each sweep."
+      ]
+    },
+    {
+      "version": "1.1",
+      "date": "2026-10-09",
+      "notes": [
+        "ESP32-C5 scans 5 GHz (channels 36–48 and 149–161) as well as 2.4 GHz.",
+        "Several boards can link at once; the app splits the channels between them.",
+        "Each board has its own name (iosESP-XXXX)."
+      ]
+    },
+    {
+      "version": "1.0",
+      "date": "2026-10-05",
+      "notes": [
+        "First release: 2.4 GHz Wi-Fi scanning streamed to Wardrive Go over Bluetooth."
+      ]
+    }
+  ]
+}
