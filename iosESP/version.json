@@ -3,6 +3,14 @@
   "date": "2026-10-16",
   "releases": [
     {
+      "version": "1.5.3",
+      "date": "2026-10-16",
+      "notes": [
+        "Fixes ESP32-S3 boards restarting every few seconds right after linking.",
+        "If a board ever crashes, Wardrive Go’s Diagnostics now shows why."
+      ]
+    },
+    {
       "version": "1.4.0",
       "date": "2026-10-12",
       "notes": [
