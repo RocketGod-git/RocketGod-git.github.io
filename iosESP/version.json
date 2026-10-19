@@ -3,6 +3,13 @@
   "date": "2026-10-19",
   "releases": [
     {
+      "version": "1.5.5",
+      "date": "2026-10-19",
+      "notes": [
+        "Scans every channel the board can tune: 2.4 GHz 1–14 and 5 GHz 36–177."
+      ]
+    },
+    {
       "version": "1.5.3",
       "date": "2026-10-16",
       "notes": [
