@@ -45,19 +45,6 @@
   .rel ul { margin: 0; padding-left: 20px; color: var(--muted); }
   .rel li { margin: 3px 0; }
   .update-note { margin-top: 12px; }
-  ul { margin: 0; padding-left: 20px; } ul li { margin: 6px 0; }
-  .chips { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .chips th { text-align: left; color: var(--muted); font-weight: 400; font-size: 12px; letter-spacing: 1px; padding: 0 0 6px; }
-  .chips td { padding: 7px 0; border-top: 1px solid var(--line); }
-  .chips .best { color: var(--ochre); text-align: right; white-space: nowrap; }
-  .pick { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 16px; padding: 14px; border: 1px solid var(--glow); border-radius: 8px; background: rgba(55,236,203,.06); }
-  .pick-label { color: var(--ochre); font-size: 11px; letter-spacing: 2px; }
-  .pick-name { font-weight: 700; margin: 2px 0; }
-  .disclosure { font-size: 12px; margin: 10px 0 0; }
-  .fix { margin: 0; }
-  .fix dt { font-weight: 700; margin-top: 14px; }
-  .fix dt:first-child { margin-top: 0; }
-  .fix dd { margin: 4px 0 0; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -70,45 +57,12 @@
   </div>
   <div class="ver" id="ver" hidden><b id="ver-num"></b><span id="ver-date"></span></div>
 
-  <h2>Pick a board</h2>
-  <div class="card">
-    <table class="chips">
-      <tr><th>Chip</th><th>Wi-Fi bands</th><th></th></tr>
-      <tr><td><strong>ESP32-C5</strong></td><td>2.4 + 5 GHz</td><td class="best">★ best</td></tr>
-      <tr><td>ESP32-C6</td><td>2.4 GHz</td><td></td></tr>
-      <tr><td>ESP32-C3</td><td>2.4 GHz</td><td></td></tr>
-      <tr><td>ESP32-S3</td><td>2.4 GHz</td><td></td></tr>
-    </table>
-    <p class="muted" style="margin:12px 0 0">Any board built on one of these chips works. The C5 is the only one that also scans 5 GHz, so it sees far more networks. The original ESP32, S2 and other chips are not supported.</p>
-    <div class="pick">
-      <div>
-        <div class="pick-label">ROCKETGOD'S PICK</div>
-        <div class="pick-name">Seeed Studio XIAO ESP32-C5</div>
-        <div class="muted">Dual-band 2.4 + 5 GHz, thumbnail-sized, native USB-C — no driver needed.</div>
-      </div>
-      <a class="btn" href="https://link.amazon/B043kNYbH" rel="sponsored noopener" target="_blank">View on Amazon</a>
-    </div>
-    <p class="muted disclosure">As an Amazon Associate, RocketGod earns from qualifying purchases.</p>
-  </div>
-
-  <h2>Before you start</h2>
-  <div class="card">
-    <ul>
-      <li><strong>A computer</strong> — Windows, macOS, Linux or ChromeOS. Flashing doesn't work from an iPhone or iPad.</li>
-      <li><strong>Chrome or Edge</strong> on that computer. Safari and Firefox can't talk to USB devices.</li>
-      <li><strong>A USB data cable.</strong> Many cables only charge; if the board never shows up, try another cable first.</li>
-      <li><strong>Close anything using the board</strong> — Arduino IDE, a serial monitor, another flasher tab.</li>
-      <li><strong>Drivers:</strong> boards with native USB (most C3, C5, C6 and S3 boards, including the XIAO) need none. Boards with a separate USB chip may need its driver on Windows or macOS: <a href="https://www.silabs.com/developer-tools/usb-to-uart-bridge-vcp-drivers" rel="noopener" target="_blank">CP210x</a> or <a href="https://www.wch-ic.com/downloads/CH341SER_ZIP.html" rel="noopener" target="_blank">CH340 / CH343</a>.</li>
-    </ul>
-  </div>
-
   <h2>Flash it from your browser</h2>
   <div class="card">
     <ol>
-      <li>Plug the <strong>ESP32-C3, C5, C6 or S3</strong> board into the computer over USB.</li>
+      <li>Plug an <strong>ESP32-C3, C5, C6 or S3</strong> into a computer over USB.</li>
       <li>Open this page in <strong>Chrome or Edge on that computer</strong>.</li>
-      <li>Hit the button and pick the board's port from the list. It usually reads <code>USB JTAG/serial debug unit</code> (native USB), <code>CP210x</code> or <code>USB-SERIAL CH340</code> — on a Mac, <code>cu.usbmodem…</code> or <code>cu.usbserial…</code>. If several appear, unplug the board, see which one disappears, then plug it back in.</li>
-      <li>The page detects the chip, erases it and flashes the right build. It takes about a minute — keep the board plugged in until the console says <strong>Done</strong>.</li>
+      <li>Hit the button and pick the board's port. It detects the chip and flashes the right build — about a minute.</li>
     </ol>
     <div class="row" style="margin-top:8px">
       <button id="flash" class="btn">Connect &amp; flash iosESP</button>
@@ -118,26 +72,11 @@
       <div class="bar"><div id="progress"></div></div>
       <pre id="log"></pre>
     </div>
-    <ol start="5">
-      <li>Power the board from any USB port, power bank or car charger. In <strong>Wardrive Go</strong> open Settings › Scanning &amp; device and turn on <strong>Link to the board</strong> — it finds and links the board by itself, no pairing. Allow Bluetooth when iOS asks.</li>
+    <ol start="4">
+      <li>Power the board. In <strong>Wardrive Go</strong> turn the Wi-Fi bridge on — it links by itself.</li>
     </ol>
-    <p class="muted update-note">This USB flash is a one-time step. On 1.2 or newer, updates install from Wardrive Go over Bluetooth — the app tells you when one is out. Boards on 1.1.1 or older need this USB flash once more.</p>
-  </div>
-
-  <h2>If it doesn't work</h2>
-  <div class="card">
-    <dl class="fix">
-      <dt>The board isn't in the port list</dt>
-      <dd>Try another USB cable (it may be charge-only), another USB port, or plug in directly instead of through a hub. Boards with a CP210x or CH340 chip need that driver installed first (see above). On Linux, add yourself to the <code>dialout</code> group and log back in.</dd>
-      <dt>"Failed to connect", timeouts, or it stops at "Connecting…"</dt>
-      <dd>Put the board in download mode: hold its <strong>BOOT</strong> button (sometimes labeled <strong>B</strong> or <strong>IO0</strong>), tap <strong>RESET</strong> — or unplug and replug it while holding BOOT — then release BOOT and press the flash button again. The port name can change after this, so pick it again.</dd>
-      <dt>"The port is busy" or access denied</dt>
-      <dd>Another app or browser tab has the board open. Close Arduino IDE, serial monitors and other flasher tabs, or unplug and replug the board, then try again.</dd>
-      <dt>The button is grayed out</dt>
-      <dd>The browser can't flash over USB. Use Chrome or Edge on a computer, or the manual steps below.</dd>
-      <dt>It flashed, but the app doesn't find it</dt>
-      <dd>Press the board's RESET button or replug it. Make sure <strong>Link to the board</strong> is on and Bluetooth is allowed for Wardrive Go in iOS Settings. If it still won't link, flash it once more — the page erases the board first, which clears anything left over from other firmware.</dd>
-    </dl>
+    <p class="muted update-note">Already on 1.2 or newer? Updates install from Wardrive Go over Bluetooth — the app tells you when one is out. Boards on 1.1.1 or older need this USB flash once.</p>
+    <p class="update-note">Need a board? RocketGod's pick: <a href="https://link.amazon/B043kNYbH" rel="sponsored noopener" target="_blank">Seeed Studio XIAO ESP32-C5</a> — the C5 is the only one that also scans 5 GHz.<br><span class="muted" style="font-size:12px">As an Amazon Associate, RocketGod earns from qualifying purchases.</span></p>
   </div>
 
   <h2 id="releases-h" hidden>What's new</h2>
