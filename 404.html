@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not found</title>
+<script>
+  // Folder names are case-sensitive on this host. Send any casing of a known folder to its real path.
+  (function () {
+    var folders = { "wardriveesp": "/WardriveESP/", "iosesp": "/WardriveESP/" };
+    var parts = location.pathname.split("/").filter(Boolean);
+    if (!parts.length) return;
+    var to = folders[parts[0].toLowerCase()];
+    if (!to) return;
+    var rest = parts.slice(1).join("/");
+    var target = to + rest + location.search + location.hash;
+    if (target !== location.pathname + location.search + location.hash) location.replace(target);
+  })();
+</script>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0b0b0f; color: #e8e8ee;
+         font: 16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  a { color: #37eccb; }
+</style>
+</head>
+<body>
+  <p>Not found. <a href="/">rocketgod.dev</a></p>
+</body>
+</html>

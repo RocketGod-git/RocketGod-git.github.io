@@ -80,7 +80,7 @@
       "notes": [
         "ESP32-C5 scans 5 GHz (channels 36â€“48 and 149â€“161) as well as 2.4 GHz.",
         "Several boards can link at once; the app splits the channels between them.",
-        "Each board has its own name (iosESP-XXXX)."
+        "Each board has its own name."
       ]
     },
     {
