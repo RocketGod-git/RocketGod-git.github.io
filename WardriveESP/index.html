@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WardriveESP firmware</title>
+<meta name="description" content="WardriveESP — the one-board ESP32 Wi-Fi and Bluetooth scanner firmware for Wardrive Go on iPhone and Android. Flash it from your browser.">
+<style>
+  :root { --paper:#06090A; --surface:#0E1618; --ink:#E9F3F0; --muted:#94A9A4; --line:#2C3D3B; --glow:#37ECCB; --ochre:#E0A53C; --danger:#FF5B52; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font: 16px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: .5px; }
+  h1 span { color: var(--glow); }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+  h2 { font-size: 13px; letter-spacing: 3px; color: var(--glow); margin: 34px 0 10px; text-transform: uppercase; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .btn { display:inline-block; background: var(--glow); color: var(--paper); font-weight: 700; padding: 14px 20px; border-radius: 8px; text-decoration: none; letter-spacing: .5px; border: 0; font: inherit; cursor: pointer; }
+  .btn.alt { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 4px; }
+  pre { background: #000; border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 13px; }
+  .muted { color: var(--muted); }
+  a { color: var(--glow); }
+  .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  ol li { margin: 6px 0; }
+  .term { margin-top: 16px; background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .term-bar { display:flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .term-bar .title { color: var(--glow); letter-spacing: 2px; }
+  .term-bar .state { color: var(--muted); }
+  .term-bar .state.busy { color: var(--ochre); }
+  .term-bar .state.ok { color: var(--glow); }
+  .term-bar .state.err { color: var(--danger); }
+  .bar { height: 3px; background: var(--line); }
+  .bar > div { height: 100%; width: 0; background: var(--glow); transition: width .2s; }
+  #log { margin: 0; border: 0; border-radius: 0; max-height: 280px; min-height: 120px; overflow: auto; font-size: 12px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+  #log .ok { color: var(--glow); } #log .err { color: var(--danger); } #log .dim { color: var(--muted); } #log .hi { color: var(--ink); }
+  .ver { display:inline-flex; gap: 10px; align-items: center; margin: -14px 0 28px; font-size: 13px; color: var(--muted); }
+  .ver b { color: var(--paper); background: var(--glow); padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+  .rel { padding: 12px 0; border-top: 1px solid var(--line); }
+  .rel:first-child { border-top: 0; padding-top: 0; }
+  .rel h3 { margin: 0 0 6px; font-size: 15px; }
+  .rel h3 span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+  .rel h3 em { color: var(--glow); font-style: normal; font-size: 11px; letter-spacing: 2px; margin-left: 8px; }
+  .rel ul { margin: 0; padding-left: 20px; color: var(--muted); }
+  .rel li { margin: 3px 0; }
+  .update-note { margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>ios<span>ESP</span></h1>
+  <p class="sub">The one-board ESP32 Wi-Fi and Bluetooth scanner for <strong>Wardrive Go</strong> on iPhone and Android. It streams every network it hears to the app over Bluetooth. No pairing, no setup, no terminal.</p>
+  <div class="row" style="margin:-10px 0 28px">
+    <a class="btn alt" href="https://apps.apple.com/app/id6783390938">Get Wardrive Go on the App Store</a>
+    <span class="muted">free · iPhone · Android</span>
+  </div>
+  <div class="ver" id="ver" hidden><b id="ver-num"></b><span id="ver-date"></span></div>
+
+  <h2>Flash it from your browser</h2>
+  <div class="card">
+    <ol>
+      <li>Plug an <strong>ESP32-C3, C5, C6 or S3</strong> into a computer over USB.</li>
+      <li>Open this page in <strong>Chrome or Edge on that computer</strong>.</li>
+      <li>Hit the button and pick the board's port. It detects the chip and flashes the right build — about a minute.</li>
+    </ol>
+    <div class="row" style="margin-top:8px">
+      <button id="flash" class="btn">Connect &amp; flash WardriveESP</button>
+    </div>
+    <div class="term">
+      <div class="term-bar"><span class="title">CONSOLE</span><span id="state" class="state">ready</span></div>
+      <div class="bar"><div id="progress"></div></div>
+      <pre id="log"></pre>
+    </div>
+    <ol start="4">
+      <li>Power the board. In <strong>Wardrive Go</strong> turn the Wi-Fi bridge on — it links by itself.</li>
+    </ol>
+    <p class="muted update-note">Already on 1.2 or newer? Updates install from Wardrive Go over Bluetooth — the app tells you when one is out. Boards on 1.1.1 or older need this USB flash once.</p>
+    <p class="update-note">Need a board? RocketGod's pick: <a href="https://link.amazon/B043kNYbH" rel="sponsored noopener" target="_blank">Seeed Studio XIAO ESP32-C5</a> — the C5 is the only one that also scans 5 GHz.<br><span class="muted" style="font-size:12px">As an Amazon Associate, RocketGod earns from qualifying purchases.</span></p>
+    <p class="update-note">Also tested and used by RocketGod: <a href="https://rabbit-labs.com/product/rabbit-labs-poltergeist-5ghz-wifi-board/" rel="noopener" target="_blank">Rabbit Labs Poltergeist</a> and <a href="https://lab401.com/r?id=iop7bf" rel="sponsored noopener" target="_blank">Ghost Board</a> — both work perfectly.</p>
+  </div>
+
+  <h2 id="releases-h" hidden>What's new</h2>
+  <div class="card" id="releases" hidden></div>
+
+  <h2>Or flash it yourself</h2>
+  <div class="card">
+    <div class="row">
+      <a class="btn alt" id="zip" href="WardriveESP.zip">Download WardriveESP.zip</a>
+      <span class="muted">prebuilt bins for ESP32-C3 · C5 · C6 · S3, plus the source</span>
+    </div>
+    <p style="margin-top:14px">Unzip, pick your chip's folder under <code>firmware-bins/</code>, then (replace <code>&lt;chip&gt;</code> and <code>&lt;PORT&gt;</code>):</p>
+<pre>esptool --chip &lt;chip&gt; -p &lt;PORT&gt; erase_flash
+esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-bridge-merged.bin</pre>
+  </div>
+
+  <p class="muted" style="margin-top:34px">For help, find RocketGod in the Wardriving channel at <a href="https://discord.gg/thepirates">https://discord.gg/thepirates</a> — "The Pirates' Plunder".</p>
+</main>
+<script type="module">
+const ESPTOOL = "https://cdn.jsdelivr.net/npm/esptool-js@0.7.0/+esm";
+const BINS = {
+  "ESP32-C3": "bins/esp32c3/wardrive-bridge-merged.bin",
+  "ESP32-C5": "bins/esp32c5/wardrive-bridge-merged.bin",
+  "ESP32-C6": "bins/esp32c6/wardrive-bridge-merged.bin",
+  "ESP32-S3": "bins/esp32s3/wardrive-bridge-merged.bin",
+};
+const btn = document.getElementById("flash"), logEl = document.getElementById("log");
+const stateEl = document.getElementById("state"), bar = document.getElementById("progress");
+
+function line(text, cls = "dim") {
+  const t = String(text).replace(/\r?\n$/, "");
+  if (!t.trim()) return;
+  const el = document.createElement("div");
+  el.className = cls;
+  el.textContent = `${new Date().toTimeString().slice(0, 8)}  ${t}`;
+  logEl.appendChild(el);
+  while (logEl.childElementCount > 1500) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function state(text, cls = "") { stateEl.textContent = text; stateEl.className = "state " + cls; }
+
+let latest = "";
+function fmtDate(s) {
+  const d = new Date(`${s}T12:00:00`);
+  return isNaN(d) ? s : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+fetch(`version.json?t=${Date.now()}`, { cache: "no-store" })
+  .then(r => (r.ok ? r.json() : null))
+  .then(v => {
+    if (!v || !v.latest) return;
+    latest = v.latest;
+    document.getElementById("ver-num").textContent = `WardriveESP ${v.latest}`;
+    document.getElementById("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
+    document.getElementById("ver").hidden = false;
+    btn.textContent = `Connect & flash WardriveESP ${v.latest}`;
+    const zip = document.getElementById("zip");
+    zip.textContent = `Download WardriveESP ${v.latest} (.zip)`;
+    zip.href = `WardriveESP.zip?v=${encodeURIComponent(v.latest)}`;
+    const box = document.getElementById("releases");
+    for (const r of v.releases || []) {
+      const item = el("div", "rel");
+      const h = el("h3", "", r.version);
+      if (r.date) h.appendChild(el("span", "", fmtDate(r.date)));
+      if (r.version === v.latest) h.appendChild(el("em", "", "LATEST"));
+      item.appendChild(h);
+      const ul = el("ul");
+      for (const n of r.notes || []) ul.appendChild(el("li", "", n));
+      item.appendChild(ul);
+      box.appendChild(item);
+    }
+    if (box.childElementCount) { box.hidden = false; document.getElementById("releases-h").hidden = false; }
+  })
+  .catch(() => {});
+function progress(f) { bar.style.width = `${Math.round(Math.max(0, Math.min(1, f)) * 100)}%`; }
+
+const terminal = {
+  clean() {},
+  writeLine(s) { line(s, /error|fail/i.test(s) ? "err" : /chip is|detect|features|crystal|mac/i.test(s) ? "hi" : "dim"); },
+  write(s) { line(s); },
+};
+
+if (!("serial" in navigator)) {
+  btn.disabled = true;
+  line("This browser can't flash over USB. Use Chrome or Edge on a computer, or the manual steps below.", "err");
+  state("unsupported", "err");
+} else if (!window.isSecureContext) {
+  btn.disabled = true;
+  line("USB flashing needs this page over HTTPS.", "err");
+  state("unsupported", "err");
+} else {
+  line("Plug in the board and press Connect & flash.");
+}
+
+btn.addEventListener("click", async () => {
+  let port;
+  try { port = await navigator.serial.requestPort(); }
+  catch { line("No port selected."); return; }
+
+  btn.disabled = true; progress(0); logEl.textContent = "";
+  let transport;
+  try {
+    state("connecting", "busy");
+    line("Connecting…", "hi");
+    const { ESPLoader, Transport } = await import(ESPTOOL);
+    if (port.readable || port.writable) { try { await port.close(); } catch {} }
+    transport = new Transport(port, false);
+    const loader = new ESPLoader({ transport, baudrate: 460800, terminal, debugLogging: false });
+    const desc = await loader.main();
+    const chip = loader.chip.CHIP_NAME;
+    line(`Detected ${desc}`, "ok");
+    const path = BINS[chip];
+    if (!path) throw new Error(`${chip} isn't supported. WardriveESP runs on ESP32-C3, C5, C6 and S3.`);
+
+    state("downloading", "busy");
+    const res = await fetch(`${path}?v=${encodeURIComponent(latest || Date.now())}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Couldn't download the ${chip} build (HTTP ${res.status}).`);
+    const data = new Uint8Array(await res.arrayBuffer());
+    line(`Downloaded WardriveESP ${latest ? latest + " " : ""}for ${chip} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
+
+    state("erasing + flashing", "busy");
+    line("Erasing and flashing — keep the board plugged in…", "hi");
+    await loader.writeFlash({
+      fileArray: [{ data, address: 0 }],
+      flashMode: "keep", flashFreq: "keep", flashSize: "keep",
+      eraseAll: true, compress: true,
+      reportProgress: (_i, written, total) => progress(written / total),
+    });
+    progress(1);
+    const nativeUsb = (port.getInfo ? port.getInfo().usbProductId : 0) === 0x1001;
+    await loader.after("hard_reset", nativeUsb);
+    line(`Done. The board restarted into WardriveESP${latest ? " " + latest : ""} — turn on the Wi-Fi bridge in Wardrive Go.`, "ok");
+    state("done", "ok");
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    line(`Failed: ${msg}`, "err");
+    if (/failed to open serial port|port is already open|access denied/i.test(msg)) {
+      line("The port is busy. Close any other app or tab using it (Arduino IDE, serial monitor), or unplug and replug the board, then try again.", "hi");
+    } else {
+      line("Hold the board's BOOT button, tap RESET (or replug while holding BOOT), release BOOT, then try again.", "hi");
+    }
+    state("failed", "err");
+  } finally {
+    try { if (transport) await transport.disconnect(); } catch {}
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
