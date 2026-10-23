@@ -3,6 +3,14 @@
   "date": "2026-10-23",
   "releases": [
     {
+      "version": "1.6.5",
+      "date": "2026-10-23",
+      "notes": [
+        "Every phone nearby now sees every board, who it's linked to, and its mode, temperature and AP count.",
+        "A board in use on another phone shows as taken instead of failing to connect."
+      ]
+    },
+    {
       "version": "1.6.4",
       "date": "2026-10-22",
       "notes": [
