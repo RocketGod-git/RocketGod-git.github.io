@@ -3,6 +3,15 @@
   "date": "2026-10-20",
   "releases": [
     {
+      "version": "1.6.4",
+      "date": "2026-10-22",
+      "notes": [
+        "Fixes a rare crash when a phone connects the moment a board powers on.",
+        "New terminal commands: link shows what the board is connected to, and drop disconnects it so another phone can link.",
+        "Removed the status LED setting. It never worked on most boards."
+      ]
+    },
+    {
       "version": "1.5.5",
       "date": "2026-10-19",
       "notes": [
