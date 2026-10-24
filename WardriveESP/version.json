@@ -3,6 +3,16 @@
   "date": "2026-10-23",
   "releases": [
     {
+      "version": "1.6.6",
+      "date": "2026-10-24",
+      "notes": [
+        "Fixes the crash some boards hit a few seconds after starting up, most often right after flashing or a USB reset.",
+        "Plugged into your phone over USB, the board now runs on USB only and turns Bluetooth off. Bluetooth comes back when you unplug.",
+        "Biscuit Crumb support: the LED ring glows with the battery level when idle, plays a rainbow when a phone connects, and flashes the app's alerts like police, trackers and drones.",
+        "Rabbit Labs Poltergeist support: the screen shows live APs, channels and link status, and flashes the app's alerts."
+      ]
+    },
+    {
       "version": "1.6.5",
       "date": "2026-10-23",
       "notes": [
