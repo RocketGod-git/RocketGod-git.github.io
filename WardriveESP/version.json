@@ -3,6 +3,14 @@
   "date": "2026-10-24",
   "releases": [
     {
+      "version": "1.6.7",
+      "date": "2026-10-25",
+      "notes": [
+        "Biscuit Pro and Ultra support: the app now flashes both chips inside with one tap, and the battery level shows on the board card again.",
+        "The Biscuit Pro and Ultra name themselves in the app, and the Pro's LED flashes the app's alerts."
+      ]
+    },
+    {
       "version": "1.6.6",
       "date": "2026-10-24",
       "notes": [
