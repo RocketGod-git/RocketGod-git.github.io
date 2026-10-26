@@ -45,6 +45,9 @@
   .rel ul { margin: 0; padding-left: 20px; color: var(--muted); }
   .rel li { margin: 3px 0; }
   .update-note { margin-top: 12px; }
+  .next { margin-top: 16px; border: 1px solid var(--glow); border-radius: 8px; padding: 14px 16px; background: rgba(55,236,203,.06); }
+  .next h3 { margin: 0 0 6px; font-size: 15px; color: var(--glow); }
+  .next p { margin: 0 0 12px; }
 </style>
 </head>
 <body>
@@ -63,10 +66,16 @@
     <ol>
       <li>Plug an <strong>ESP32-C3, C5, C6 or S3</strong> into a computer over USB.</li>
       <li>Open this page in <strong>Chrome or Edge on that computer</strong>.</li>
-      <li>Hit the button and pick the board's port. It detects the chip and flashes the right build — about a minute.</li>
+      <li>Hit the button and pick the board's port. It detects the chip and flashes the right build in about a minute.</li>
     </ol>
+    <p class="muted" style="margin:0 0 8px">Biscuit Pro or Ultra? It has two chips and two ports. Flash either one and the page asks for the other.</p>
     <div class="row" style="margin-top:8px">
       <button id="flash" class="btn">Connect &amp; flash WardriveESP</button>
+    </div>
+    <div class="next" id="next" hidden>
+      <h3 id="next-title"></h3>
+      <p id="next-text"></p>
+      <button id="flash2" class="btn"></button>
     </div>
     <div class="term">
       <div class="term-bar"><span class="title">CONSOLE</span><span id="state" class="state">ready</span></div>
@@ -93,6 +102,10 @@
     <p style="margin-top:14px">Unzip, pick your chip's folder under <code>firmware-bins/</code>, then (replace <code>&lt;chip&gt;</code> and <code>&lt;PORT&gt;</code>):</p>
 <pre>esptool --chip &lt;chip&gt; -p &lt;PORT&gt; erase_flash
 esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-bridge-merged.bin</pre>
+    <div id="coproc-manual" hidden>
+      <p style="margin-top:14px">Biscuit Pro or Ultra second chip (the ESP32 on the CH340 port): grab <a id="coproc-bin" href="bins/esp32/wardrive-coproc-merged.bin">wardrive-coproc-merged.bin</a>, flash it, then send <code>WDCP setboard biscuit_ultra</code> (or <code>biscuit_pro</code>) on that port at 115200.</p>
+<pre>esptool --chip esp32 -p &lt;CH340 PORT&gt; -b 460800 write_flash 0x0 wardrive-coproc-merged.bin</pre>
+    </div>
   </div>
 
   <p class="muted" style="margin-top:34px">For help, find RocketGod in the Wardriving channel at <a href="https://discord.gg/thepirates">https://discord.gg/thepirates</a> — "The Pirates' Plunder".</p>
@@ -105,8 +118,21 @@ const BINS = {
   "ESP32-C6": "bins/esp32c6/wardrive-bridge-merged.bin",
   "ESP32-S3": "bins/esp32s3/wardrive-bridge-merged.bin",
 };
+// Image chip id (byte 12 of an ESP image header) and where the bootloader sits in the merged image, per chip.
+const IMAGE = { "ESP32-C3": [5, 0], "ESP32-C5": [23, 0x2000], "ESP32-C6": [13, 0], "ESP32-S3": [9, 0] };
+// This folder first, then the old iosESP folder (CI publishes both).
+const SITES = ["", "../iosESP/"];
+// Biscuit Pro / Ultra: the C5 on native USB, the classic ESP32 WROOM (co-processor) behind a CH340.
+const USB_JTAG = { usbVendorId: 0x303a, usbProductId: 0x1001 };
+const CH340 = { usbVendorId: 0x1a86, usbProductId: 0x7523 };
+const BISCUIT_BOARDS = ["biscuit_ultra", "biscuit_pro", "biscuit_dual"];
+const C5_GAP_MS = 10000;   // bench rule: about 10 s between ROM sessions on a Biscuit C5
+const MESH_RE = /SerialBLEInterface|BLE: (?:readBytes|writeBytes|onConnect)|\[PowerFSM\]|\[SerialConsole\]|E S H T|meshtastic|meshcore/i;
+const BISCUIT_RE = /Biscuit[ _](?:Ultra|Pro)|biscuit_(?:ultra|pro|dual)|WROOM BLE Gateway/i;
+
 const btn = document.getElementById("flash"), logEl = document.getElementById("log");
 const stateEl = document.getElementById("state"), bar = document.getElementById("progress");
+const nextBox = document.getElementById("next"), nextBtn = document.getElementById("flash2");
 
 function line(text, cls = "dim") {
   const t = String(text).replace(/\r?\n$/, "");
@@ -118,9 +144,12 @@ function line(text, cls = "dim") {
   while (logEl.childElementCount > 1500) logEl.removeChild(logEl.firstChild);
   logEl.scrollTop = logEl.scrollHeight;
 }
-function state(text, cls = "") { stateEl.textContent = text; stateEl.className = "state " + cls; }
+let part = "";
+function state(text, cls = "") { stateEl.textContent = part && cls === "busy" ? `${part} · ${text}` : text; stateEl.className = "state " + cls; }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function modelName(b) { return b === "biscuit_ultra" ? "Biscuit Ultra" : b === "biscuit_pro" ? "Biscuit Pro" : "Biscuit Pro / Ultra"; }
 
-let latest = "";
+let latest = "", coproc = "", coprocParts = null;
 function fmtDate(s) {
   const d = new Date(`${s}T12:00:00`);
   return isNaN(d) ? s : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -131,40 +160,493 @@ function el(tag, cls, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
-fetch(`version.json?t=${Date.now()}`, { cache: "no-store" })
-  .then(r => (r.ok ? r.json() : null))
-  .then(v => {
-    if (!v || !v.latest) return;
-    latest = v.latest;
-    document.getElementById("ver-num").textContent = `WardriveESP ${v.latest}`;
-    document.getElementById("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
-    document.getElementById("ver").hidden = false;
-    btn.textContent = `Connect & flash WardriveESP ${v.latest}`;
-    const zip = document.getElementById("zip");
-    zip.textContent = `Download WardriveESP ${v.latest} (.zip)`;
-    zip.href = `WardriveESP.zip?v=${encodeURIComponent(v.latest)}`;
-    const box = document.getElementById("releases");
-    for (const r of v.releases || []) {
-      const item = el("div", "rel");
-      const h = el("h3", "", r.version);
-      if (r.date) h.appendChild(el("span", "", fmtDate(r.date)));
-      if (r.version === v.latest) h.appendChild(el("em", "", "LATEST"));
-      item.appendChild(h);
-      const ul = el("ul");
-      for (const n of r.notes || []) ul.appendChild(el("li", "", n));
-      item.appendChild(ul);
-      box.appendChild(item);
-    }
-    if (box.childElementCount) { box.hidden = false; document.getElementById("releases-h").hidden = false; }
-  })
-  .catch(() => {});
+// version.json `coproc_parts`: only the co-processor's three regions, never one that reaches into NVS (0x9000-0xF000).
+function parseParts(a) {
+  if (!Array.isArray(a) || !a.length) return null;
+  const out = [];
+  for (const p of a) {
+    const at = parseInt(String(p && p.at || "").replace(/^0x/i, ""), 16);
+    const file = String(p && p.file || "");
+    if (!Number.isFinite(at) || !/^[A-Za-z0-9._-]+\.bin$/.test(file)) return null;
+    out.push({ at, file });
+  }
+  out.sort((x, y) => x.at - y.at);
+  return out.map(p => p.at).join() === [0x1000, 0x8000, 0x10000].join() ? out : null;
+}
+async function fetchVersion() {
+  for (const site of SITES) {
+    try {
+      const r = await fetch(`${site}version.json?t=${Date.now()}`, { cache: "no-store" });
+      if (r.ok) return await r.json();
+    } catch {}
+  }
+  return null;
+}
+const versionReady = fetchVersion().then(v => {
+  if (!v || !v.latest) return;
+  latest = v.latest;
+  if (/^\d+(\.\d+){1,3}$/.test(String(v.coproc || "").trim())) {
+    coproc = String(v.coproc).trim();
+    coprocParts = parseParts(v.coproc_parts);
+    document.getElementById("coproc-manual").hidden = false;
+    document.getElementById("coproc-bin").href = `bins/esp32/wardrive-coproc-merged.bin?v=${encodeURIComponent(coproc)}`;
+  }
+  document.getElementById("ver-num").textContent = `WardriveESP ${v.latest}`;
+  document.getElementById("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
+  document.getElementById("ver").hidden = false;
+  btn.textContent = `Connect & flash WardriveESP ${v.latest}`;
+  const zip = document.getElementById("zip");
+  zip.textContent = `Download WardriveESP ${v.latest} (.zip)`;
+  zip.href = `WardriveESP.zip?v=${encodeURIComponent(v.latest)}`;
+  const box = document.getElementById("releases");
+  for (const r of v.releases || []) {
+    const item = el("div", "rel");
+    const h = el("h3", "", r.version);
+    if (r.date) h.appendChild(el("span", "", fmtDate(r.date)));
+    if (r.version === v.latest) h.appendChild(el("em", "", "LATEST"));
+    item.appendChild(h);
+    const ul = el("ul");
+    for (const n of r.notes || []) ul.appendChild(el("li", "", n));
+    item.appendChild(ul);
+    box.appendChild(item);
+  }
+  if (box.childElementCount) { box.hidden = false; document.getElementById("releases-h").hidden = false; }
+}).catch(() => {});
 function progress(f) { bar.style.width = `${Math.round(Math.max(0, Math.min(1, f)) * 100)}%`; }
 
 const terminal = {
   clean() {},
-  writeLine(s) { line(s, /error|fail/i.test(s) ? "err" : /chip is|detect|features|crystal|mac/i.test(s) ? "hi" : "dim"); },
+  writeLine(s) { line(s, /error|fail|not match/i.test(s) ? "err" : /chip is|detect|features|crystal|mac|verified/i.test(s) ? "hi" : "dim"); },
   write(s) { line(s); },
 };
+
+// ---- MD5 (the flash is read back and compared after every write) ----
+function md5(bytes) {
+  const K = new Int32Array(64), S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
+  for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296);
+  const n = bytes.length, words = new Int32Array((((n + 8) >>> 6) + 1) * 16);
+  for (let i = 0; i < n; i++) words[i >> 2] |= bytes[i] << ((i % 4) * 8);
+  words[n >> 2] |= 0x80 << ((n % 4) * 8);
+  words[words.length - 2] = n * 8; words[words.length - 1] = Math.floor(n / 0x20000000);
+  let a = 0x67452301, b = -271733879, c = -1732584194, d = 271733878;
+  for (let o = 0; o < words.length; o += 16) {
+    let A = a, B = b, C = c, D = d;
+    for (let i = 0; i < 64; i++) {
+      let f, g;
+      if (i < 16) { f = (B & C) | (~B & D); g = i; }
+      else if (i < 32) { f = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+      else if (i < 48) { f = B ^ C ^ D; g = (3 * i + 5) % 16; }
+      else { f = C ^ (B | ~D); g = (7 * i) % 16; }
+      const t = D; D = C; C = B;
+      const x = (A + f + K[i] + words[o + g]) | 0, s = S[(i >> 4) * 4 + (i % 4)];
+      B = (B + ((x << s) | (x >>> (32 - s)))) | 0; A = t;
+    }
+    a = (a + A) | 0; b = (b + B) | 0; c = (c + C) | 0; d = (d + D) | 0;
+  }
+  let h = "";
+  for (const v of [a, b, c, d]) for (let i = 0; i < 4; i++) h += ((v >>> (i * 8)) & 255).toString(16).padStart(2, "0");
+  return h;
+}
+
+// ---- Downloads: every site in turn, size checked, then sanity-checked like the app does ----
+async function download(path, ver, max) {
+  let last = null;
+  for (const site of SITES) {
+    try {
+      const res = await fetch(`${site}${path}?v=${encodeURIComponent(ver || Date.now())}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Download failed (HTTP ${res.status}). Try again.`);
+      const want = Number(res.headers.get("content-length") || 0);
+      const data = new Uint8Array(await res.arrayBuffer());
+      if (data.length > max) throw new Error("The download is too big. Try again later.");
+      if (want && !res.headers.get("content-encoding") && data.length !== want) throw new Error("Download cut off. Try again.");
+      return data;
+    } catch (e) { last = e; }
+  }
+  throw last || new Error("Download failed. Try again.");
+}
+const u16 = (b, i) => b[i] | (b[i + 1] << 8);
+const isImage = (b, at, chipId) => b.length > at + 16 && b[at] === 0xE9 && u16(b, at + 12) === chipId;
+const isTable = (b, at) => b.length > at + 2 && b[at] === 0xAA && b[at + 1] === 0x50;
+
+async function downloadBridge(chip) {
+  const data = await download(BINS[chip], latest, 4 * 1024 * 1024);
+  const [id, bl] = IMAGE[chip];
+  if (data.length < 0x30000 || !isImage(data, bl, id) || !isTable(data, 0x8000) || !isImage(data, 0x20000, id))
+    throw new Error(`The download isn't a valid ${chip} image. Try again.`);
+  return data;
+}
+// Co-processor regions. [wipe] = the WROOM still runs stock Biscuit firmware: the merged image at 0x0 (clears the
+// stock NVS too). Otherwise only bootloader 0x1000, table 0x8000 and app 0x10000, so the stored model and scan
+// mode in NVS survive: the published parts, else the same regions cut from the merged image.
+async function downloadCoproc(wipe) {
+  if (!wipe && coprocParts) {
+    try {
+      const out = [];
+      for (const p of coprocParts) {
+        const b = await download(`bins/esp32/${p.file}`, coproc, 4 * 1024 * 1024);
+        const ok = b.length >= 16 && (p.at === 0x1000 ? b.length <= 0x7000 && isImage(b, 0, 0)
+          : p.at === 0x8000 ? b.length <= 0x1000 && isTable(b, 0) : b.length <= 0x300000 && isImage(b, 0, 0));
+        if (!ok) throw new Error(`${p.file} isn't a valid co-processor part.`);
+        out.push({ data: b, address: p.at });
+      }
+      return out;
+    } catch (e) { line(`Co-processor parts failed (${e.message}), cutting them from the merged image.`); }
+  }
+  const b = await download("bins/esp32/wardrive-coproc-merged.bin", coproc, 4 * 1024 * 1024);
+  if (b.length < 0x10100 || !isImage(b, 0x1000, 0) || !isTable(b, 0x8000) || !isImage(b, 0x10000, 0))
+    throw new Error("The download isn't a valid co-processor image. Try again.");
+  if (wipe) return [{ data: b, address: 0 }];
+  return [{ data: b.slice(0x1000, 0x9000), address: 0x1000 }, { data: b.slice(0x10000), address: 0x10000 }];
+}
+
+// ---- Plain serial (115200) for the board's own firmware: boot banners, the co-processor hello, WD:CAPS ----
+async function serial(port, fn) {
+  await port.open({ baudRate: 115200 });
+  const reader = port.readable.getReader(), dec = new TextDecoder("latin1");
+  let text = "", pending = null;
+  const io = {
+    get text() { return text; },
+    // RTS first, then DTR: on native USB, RTS asserted with DTR low resets the chip.
+    async quiet() { try { await port.setSignals({ requestToSend: false }); await port.setSignals({ dataTerminalReady: false }); } catch {} },
+    async read(ms, done) {
+      const end = Date.now() + ms;
+      while (Date.now() < end && text.length < 32000) {
+        if (!pending) pending = reader.read();
+        const r = await Promise.race([pending, sleep(Math.max(1, end - Date.now())).then(() => null)]);
+        if (r === null) break;
+        pending = null;
+        if (r.done) break;
+        text += dec.decode(r.value, { stream: true });
+        if (done && done(text)) break;
+      }
+      return text;
+    },
+    async write(s) { const w = port.writable.getWriter(); try { await w.write(new TextEncoder().encode(s)); } finally { w.releaseLock(); } },
+  };
+  try { return await fn(io); }
+  finally {
+    try { await reader.cancel(); } catch {}
+    try { reader.releaseLock(); } catch {}
+    try { await port.close(); } catch {}
+  }
+}
+// What the board prints by itself for a moment, without resetting it (a mesh radio warns before it's erased).
+async function listen(port, ms) {
+  try { return await serial(port, async io => { await io.quiet(); return io.read(ms); }); } catch { return ""; }
+}
+function helloOf(t) {
+  const all = t.match(/WDCP hello [^\r\n]*/g);
+  if (!all) return null;
+  const m = all[all.length - 1];
+  const board = (m.match(/board=(\S+)/) || [])[1];
+  if (!BISCUIT_BOARDS.includes(board)) return null;
+  return { board, fw: (m.match(/fw=(\S+)/) || [])[1] || "?" };
+}
+// A Biscuit WROOM from its boot log: our co-processor's hello, or the stock banner (bench 2026-10-25:
+// "BISCUIT V1 - WROOM BLE Gateway", "Device name: Biscuit Ultra"). null = not a Biscuit WROOM.
+function parseWroom(t) {
+  const h = helloOf(t);
+  if (h) return h;
+  if (!t.includes("WROOM BLE Gateway") && !t.includes("Device name: Biscuit") && !t.includes("firmware.biscuitshop.us")) return null;
+  const board = t.includes("Device name: Biscuit Ultra") || t.includes("Biscuit_Ultra") ? "biscuit_ultra"
+    : t.includes("Device name: Biscuit Pro") || t.includes("Biscuit_V1") ? "biscuit_pro" : "biscuit_dual";
+  return { board, fw: null };
+}
+// Reset the WROOM into its firmware (EN pulse on RTS, IO0 high) and read its boot log.
+async function probeWroom(port) {
+  try {
+    return await serial(port, async io => {
+      await io.quiet();
+      await port.setSignals({ requestToSend: true }); await sleep(120); await port.setSignals({ requestToSend: false });
+      const t = await io.read(4500, s => { const i = s.indexOf("WDCP hello"); return i >= 0 && s.indexOf("\n", i) > 0; });
+      return parseWroom(t);
+    });
+  } catch (e) { line(`Couldn't read the ESP32's boot log (${e.message}).`); return null; }
+}
+// After the co-processor flash: wait for its hello and store the model with setboard when the hello doesn't carry it.
+async function finishCoproc(port, board) {
+  try {
+    return await serial(port, async io => {
+      await io.quiet();
+      let hello = helloOf(await io.read(6000, s => helloOf(s) !== null));
+      if (!hello) { await io.write("\r\nWDCP hello?\r\n"); hello = helloOf(await io.read(3000, s => helloOf(s) !== null)); }
+      if (board !== "biscuit_dual" && (!hello || hello.board !== board)) {
+        line(`Co-processor says ${hello ? hello.board : "nothing"}, setting ${board}.`);
+        await io.write(`\r\nWDCP setboard ${board}\r\n`);
+        const again = helloOf(await io.read(3000, s => { const h = helloOf(s); return !!h && h.board === board; }));
+        if (again) hello = again;
+      }
+      return hello;
+    });
+  } catch (e) { line(`Couldn't check the co-processor (${e.message}).`); return null; }
+}
+// RTS pulse with DTR low: boots native USB boards out of the ROM loader into their firmware (the app's plain reset).
+async function plainReset(port) {
+  try {
+    await serial(port, async io => {
+      await io.quiet();
+      await port.setSignals({ requestToSend: true }); await sleep(200); await port.setSignals({ requestToSend: false });
+    });
+  } catch {}
+}
+function capsOf(t) {
+  const m = t.match(/WD:CAPS [^\r\n]*/g);
+  if (!m) return null;
+  const caps = {};
+  for (const kv of m[m.length - 1].split(" ").slice(1)) { const i = kv.indexOf("="); if (i > 0) caps[kv.slice(0, i)] = kv.slice(i + 1); }
+  return caps;
+}
+// After a WardriveESP flash: find the port again (native USB re-enumerates on reset), open a USB session with
+// `wdusb hello`, read WD:CAPS, then `wdusb bye` so the board goes straight back to Bluetooth for the app.
+async function verifyWardrive(oldPort, info) {
+  const until = Date.now() + 15000;
+  while (Date.now() < until) {
+    let port = null;
+    try {
+      const live = (await navigator.serial.getPorts()).filter(p => {
+        const i = p.getInfo(); return i.usbVendorId === info.usbVendorId && i.usbProductId === info.usbProductId && p.connected !== false;
+      });
+      port = live.includes(oldPort) ? oldPort : live.length === 1 ? live[0] : null;
+    } catch {}
+    if (port) {
+      try {
+        const caps = await serial(port, async io => {
+          await io.quiet();
+          for (let i = 0; i < 10; i++) {
+            await io.write("wdusb hello\n");
+            const c = capsOf(await io.read(1000, s => /WD:CAPS [^\r\n]*\r?\n/.test(s)));
+            if (c) { await io.write("wdusb bye\n"); await io.read(200); return c; }
+          }
+          return null;
+        });
+        return caps;
+      } catch {}
+    }
+    await sleep(500);
+  }
+  return null;
+}
+
+// ---- ROM loader sessions (esptool-js) ----
+let lastC5End = 0;
+async function c5Gap() {
+  let left = lastC5End + C5_GAP_MS - Date.now();
+  if (left <= 0) return;
+  state("waiting", "busy");
+  line(`Giving the C5 ${Math.ceil(left / 1000)} s to settle before the next session…`);
+  while (left > 0) { await sleep(Math.min(left, 500)); left = lastC5End + C5_GAP_MS - Date.now(); }
+}
+async function openLoader(port, baudrate) {
+  const { ESPLoader, Transport } = await import(ESPTOOL);
+  if (port.readable || port.writable) { try { await port.close(); } catch {} }
+  const transport = new Transport(port, false);
+  const loader = new ESPLoader({ transport, baudrate, terminal, debugLogging: false });
+  return { transport, loader };
+}
+// Connect and identify. [slowRetry]: the Biscuit's CH340 retries once at 115200 if 460800 doesn't hold (the app
+// does the same).
+async function connect(port, slowRetry) {
+  let s = await openLoader(port, 460800);
+  try { s.desc = await s.loader.main(); return s; }
+  catch (e) {
+    try { await s.transport.disconnect(); } catch {}
+    if (!slowRetry) throw e;
+    line(`460800 baud didn't hold (${e.message}). Retrying at 115200.`);
+  }
+  s = await openLoader(port, 115200);
+  try { s.desc = await s.loader.main(); return s; }
+  catch (e) { try { await s.transport.disconnect(); } catch {} throw e; }
+}
+async function checkSecurity(loader) {
+  let s;
+  try { s = await loader.getSecurityInfo(true); } catch { return; }
+  if (!s) return;
+  if (s.flags & 0x1) throw new Error("Secure boot is on. This board can't take WardriveESP.");
+  if (s.flags & 0x4) throw new Error("Secure download mode is on. This board can't take WardriveESP.");
+  let n = s.flashCryptCnt & 0x7, bits = 0;
+  while (n) { bits += n & 1; n >>= 1; }
+  if (bits % 2) throw new Error("Flash encryption is on. This board can't take WardriveESP.");
+}
+async function write(loader, files, eraseAll) {
+  const sizes = files.map(f => f.data.length), all = sizes.reduce((a, b) => a + b, 0) || 1;
+  await loader.writeFlash({
+    fileArray: files, flashMode: "keep", flashFreq: "keep", flashSize: "keep",
+    eraseAll, compress: true, calculateMD5Hash: md5,
+    reportProgress: (i, written, total) => {
+      const before = sizes.slice(0, i).reduce((a, b) => a + b, 0);
+      progress((before + (total ? written / total : 0) * sizes[i]) / all);
+    },
+  });
+  progress(1);
+}
+
+// ---- The flow ----
+// mode: "any" = the main button (whatever board), "coproc" = step 2 after a C5 (the Biscuit's ESP32 on the CH340),
+// "c5" = step 2 after the co-processor (the Biscuit's C5 on native USB).
+let busy = false;
+function setBusy(b) { busy = b; btn.disabled = b; nextBtn.disabled = b; }
+function showNext(kind, strong) {
+  const t = document.getElementById("next-title"), p = document.getElementById("next-text");
+  if (kind === "coproc") {
+    t.textContent = strong ? "Step 2 of 2: the second chip" : "Biscuit Pro or Ultra?";
+    p.textContent = strong
+      ? `Your Biscuit has a second chip for the battery gauge and the second radio. Hit the button and pick the USB-SERIAL CH340 port. Co-processor ${coproc}.`
+      : `It has a second chip for the battery gauge and the second radio. Flash it too: hit the button and pick the USB-SERIAL CH340 port. Any other C5 board is done.`;
+    nextBtn.textContent = "Flash the second chip";
+  } else {
+    t.textContent = "Step 2 of 2: the main chip";
+    p.textContent = "Now the ESP32-C5. Hit the button and pick the board's other port (USB JTAG/serial debug unit).";
+    nextBtn.textContent = "Flash the main chip";
+  }
+  nextBox.dataset.kind = kind;
+  nextBox.hidden = false;
+}
+function hideNext() { nextBox.hidden = true; delete nextBox.dataset.kind; }
+
+async function run(port, mode) {
+  setBusy(true); progress(0);
+  const info = port.getInfo ? port.getInfo() : {};
+  const nativeUsb = info.usbVendorId === USB_JTAG.usbVendorId && info.usbProductId === USB_JTAG.usbProductId;
+  let s = null, chip = "", wrote = false;
+  const close = async reset => {
+    if (!s) return;
+    if (reset) { try { await s.loader.after("hard_reset", nativeUsb); } catch {} }
+    try { await s.transport.disconnect(); } catch {}
+    s = null;
+    if (chip === "ESP32-C5") lastC5End = Date.now();
+  };
+  try {
+    await Promise.race([versionReady, sleep(5000)]);
+    let heard = "";
+    if (mode === "any") {
+      state("listening", "busy");
+      heard = await listen(port, 1500);
+      if (MESH_RE.test(heard) && !confirm("This board runs MeshCore or Meshtastic.\n\nFlashing WardriveESP erases it and its settings. Reflash the mesh firmware to go back.\n\nFlash anyway?")) {
+        line("Canceled. The mesh firmware is untouched.");
+        state("ready");
+        return;
+      }
+    }
+    if (nativeUsb) await c5Gap();
+    state("connecting", "busy");
+    line("Connecting…", "hi");
+    s = await connect(port, mode === "coproc");
+    chip = s.loader.chip.CHIP_NAME;
+    line(`Detected ${s.desc}`, "ok");
+
+    if (chip === "ESP32") {
+      if (mode === "c5") throw new Error("That's the Biscuit's ESP32. Pick the other port (USB JTAG/serial debug unit) for the C5.");
+      if (!coproc) throw new Error("ESP32 isn't supported. WardriveESP runs on ESP32-C3, C5, C6 and S3.");
+      await close(false);   // the probe resets the chip into its firmware itself
+      if (mode === "any") part = "1/2 ESP32";
+      await flashCoproc(port, mode);
+      return;
+    }
+    if (mode === "coproc") throw new Error(`Expected the Biscuit's ESP32, found ${chip}. Pick the USB-SERIAL CH340 port.`);
+    if (mode === "c5" && chip !== "ESP32-C5") throw new Error(`Expected the Biscuit's ESP32-C5, found ${chip}.`);
+    if (!BINS[chip]) throw new Error(`${chip} isn't supported. WardriveESP runs on ESP32-C3, C5, C6 and S3.`);
+    await checkSecurity(s.loader);
+
+    state("downloading", "busy");
+    const data = await downloadBridge(chip);
+    line(`Downloaded WardriveESP ${latest ? latest + " " : ""}for ${chip} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
+
+    state("erasing + flashing", "busy");
+    line("Erasing and flashing. Keep the board plugged in…", "hi");
+    wrote = true;
+    await write(s.loader, [{ data, address: 0 }], true);
+    state("restarting", "busy");
+    await close(true);
+    line(`Flashed WardriveESP${latest ? " " + latest : ""}. The board is restarting.`, "ok");
+
+    state("checking", "busy");
+    const caps = await verifyWardrive(port, info);
+    const biscuit = !!(caps && /^biscuit_/.test(caps.board || "")) || BISCUIT_RE.test(heard);
+    if (caps) {
+      line(`Verified: WardriveESP ${caps.fw || "?"} running on ${caps.chip || chip}${caps.board_name ? ", " + caps.board_name.replace(/_/g, " ") : ""}${caps.batt === "1" ? ", battery gauge on" : ""}${caps.coproc ? ", second radio " + caps.coproc : ""}.`, "ok");
+      if (latest && caps.fw && caps.fw !== latest) line(`It reports ${caps.fw}, not ${latest}. Try flashing again.`, "err");
+    } else {
+      line("It didn't answer over USB yet. That's OK if it links in the app.");
+    }
+    line("Done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.", "ok");
+    state("done", "ok");
+    part = "";
+    if (mode === "c5") { line("Both chips are done.", "ok"); hideNext(); return; }
+    if (chip === "ESP32-C5" && coproc) {
+      let strong = biscuit;
+      try { strong ||= (await navigator.serial.getPorts()).some(p => { const i = p.getInfo(); return i.usbVendorId === CH340.usbVendorId && i.usbProductId === CH340.usbProductId; }); } catch {}
+      showNext("coproc", strong);
+    }
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e);
+    line(`Failed: ${msg}`, "err");
+    // Not written yet: back to its old firmware. A C5 always ends with a plain reset (Biscuit bench rule).
+    const hadLoader = !!s;
+    await close(!wrote || chip === "ESP32-C5");
+    // A native USB session that failed before the chip answered: plain reset too, and the next one waits.
+    if (nativeUsb && !hadLoader && !chip) { await plainReset(port); lastC5End = Date.now(); }
+    if (/failed to open serial port|port is already open|access denied/i.test(msg)) {
+      line("The port is busy. Close any other app or tab using it (Arduino IDE, serial monitor), or unplug and replug the board, then try again.", "hi");
+    } else if (!/isn't supported|Expected|Pick the|Secure|encryption|isn't a Biscuit/i.test(msg)) {
+      line("Hold the board's BOOT button, tap RESET (or replug while holding BOOT), release BOOT, then try again.", "hi");
+    }
+    state("failed", "err");
+  } finally {
+    await close(false);
+    setBusy(false);
+  }
+}
+
+// The Biscuit Pro / Ultra co-processor onto the classic ESP32 WROOM (CH340): read the model from its boot log,
+// write the image, plain reset, then wait for its hello and store the model.
+async function flashCoproc(port, mode) {
+  let s = null;
+  try {
+    state("reading the board", "busy");
+    const w = await probeWroom(port);
+    if (!w && mode !== "coproc") {
+      line("This ESP32 isn't a Biscuit Pro or Ultra (no Biscuit boot log). WardriveESP runs on ESP32-C3, C5, C6 and S3.", "err");
+      state("failed", "err");
+      return;
+    }
+    if (w) line(`${modelName(w.board)} ESP32 found, running ${w.fw ? "co-processor " + w.fw : "the stock Biscuit firmware"}.`, "ok");
+    else line("Couldn't read the Biscuit's model from its boot log. Flashing the co-processor anyway.", "hi");
+    const board = w ? w.board : "biscuit_dual";
+    const wipe = !w || !w.fw;
+
+    state("downloading", "busy");
+    const files = await downloadCoproc(wipe);
+    const kb = files.reduce((a, f) => a + f.data.length, 0) / 1024;
+    line(`Downloaded co-processor ${coproc} (${kb.toFixed(0)} KB, ${wipe ? "full image" : "keeps its settings"}).`, "hi");
+
+    state("connecting", "busy");
+    s = await connect(port, true);
+    if (s.loader.chip.CHIP_NAME !== "ESP32") throw new Error(`Expected the Biscuit's ESP32, found ${s.loader.chip.CHIP_NAME}.`);
+
+    state("flashing", "busy");
+    line("Flashing the co-processor. Keep the board plugged in…", "hi");
+    await write(s.loader, files, false);
+    state("restarting", "busy");
+    try { await s.loader.after("hard_reset", false); } catch {}
+    try { await s.transport.disconnect(); } catch {}
+    s = null;
+
+    state("checking", "busy");
+    const hello = await finishCoproc(port, board);
+    if (hello) line(`Co-processor ${hello.fw} running, board ${modelName(hello.board)}. Battery shows once the C5 links.`, "ok");
+    else line(`Co-processor ${coproc} written, no answer yet. Replug the board to check.`, "hi");
+    state("done", "ok");
+    part = "";
+    if (mode === "coproc") { line("Both chips are done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.", "ok"); hideNext(); }
+    else showNext("c5");
+  } catch (e) {
+    if (s) {
+      try { await s.loader.after("hard_reset", false); } catch {}
+      try { await s.transport.disconnect(); } catch {}
+    }
+    throw e;
+  }
+}
 
 if (!("serial" in navigator)) {
   btn.disabled = true;
@@ -179,57 +661,29 @@ if (!("serial" in navigator)) {
 }
 
 btn.addEventListener("click", async () => {
+  if (busy) return;
   let port;
   try { port = await navigator.serial.requestPort(); }
   catch { line("No port selected."); return; }
+  hideNext(); logEl.textContent = ""; part = "";
+  await run(port, "any");
+});
 
-  btn.disabled = true; progress(0); logEl.textContent = "";
-  let transport;
-  try {
-    state("connecting", "busy");
-    line("Connecting…", "hi");
-    const { ESPLoader, Transport } = await import(ESPTOOL);
-    if (port.readable || port.writable) { try { await port.close(); } catch {} }
-    transport = new Transport(port, false);
-    const loader = new ESPLoader({ transport, baudrate: 460800, terminal, debugLogging: false });
-    const desc = await loader.main();
-    const chip = loader.chip.CHIP_NAME;
-    line(`Detected ${desc}`, "ok");
-    const path = BINS[chip];
-    if (!path) throw new Error(`${chip} isn't supported. WardriveESP runs on ESP32-C3, C5, C6 and S3.`);
-
-    state("downloading", "busy");
-    const res = await fetch(`${path}?v=${encodeURIComponent(latest || Date.now())}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Couldn't download the ${chip} build (HTTP ${res.status}).`);
-    const data = new Uint8Array(await res.arrayBuffer());
-    line(`Downloaded WardriveESP ${latest ? latest + " " : ""}for ${chip} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
-
-    state("erasing + flashing", "busy");
-    line("Erasing and flashing — keep the board plugged in…", "hi");
-    await loader.writeFlash({
-      fileArray: [{ data, address: 0 }],
-      flashMode: "keep", flashFreq: "keep", flashSize: "keep",
-      eraseAll: true, compress: true,
-      reportProgress: (_i, written, total) => progress(written / total),
-    });
-    progress(1);
-    const nativeUsb = (port.getInfo ? port.getInfo().usbProductId : 0) === 0x1001;
-    await loader.after("hard_reset", nativeUsb);
-    line(`Done. The board restarted into WardriveESP${latest ? " " + latest : ""} — turn on the Wi-Fi bridge in Wardrive Go.`, "ok");
-    state("done", "ok");
-  } catch (e) {
-    const msg = e && e.message ? e.message : String(e);
-    line(`Failed: ${msg}`, "err");
-    if (/failed to open serial port|port is already open|access denied/i.test(msg)) {
-      line("The port is busy. Close any other app or tab using it (Arduino IDE, serial monitor), or unplug and replug the board, then try again.", "hi");
-    } else {
-      line("Hold the board's BOOT button, tap RESET (or replug while holding BOOT), release BOOT, then try again.", "hi");
-    }
-    state("failed", "err");
-  } finally {
-    try { if (transport) await transport.disconnect(); } catch {}
-    btn.disabled = false;
+nextBtn.addEventListener("click", async () => {
+  if (busy) return;
+  const kind = nextBox.dataset.kind;
+  if (!kind) return;
+  let port;
+  try { port = await navigator.serial.requestPort({ filters: [kind === "coproc" ? CH340 : USB_JTAG] }); }
+  catch {
+    line(kind === "coproc"
+      ? "No port selected. No CH340 in the list? Install the CH340 driver, then unplug and replug the board."
+      : "No port selected. No USB JTAG port in the list? Unplug and replug the board.");
+    return;
   }
+  part = kind === "coproc" ? "2/2 ESP32" : "2/2 C5";
+  line(kind === "coproc" ? "Second chip: the ESP32 co-processor." : "Main chip: the ESP32-C5.", "hi");
+  await run(port, kind);
 });
 </script>
 </body>
