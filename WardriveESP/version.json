@@ -3,6 +3,13 @@
   "date": "2026-10-25",
   "releases": [
     {
+      "version": "1.6.8",
+      "date": "2026-10-25",
+      "notes": [
+        "Biscuit Pro and Ultra: the second chip now scans 2.4 GHz Wi-Fi alongside the main radio for more finds, with Bluetooth Classic and Off as options on the board card."
+      ]
+    },
+    {
       "version": "1.6.7",
       "date": "2026-10-25",
       "notes": [
