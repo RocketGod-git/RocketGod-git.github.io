@@ -3,6 +3,13 @@
   "date": "2026-10-26",
   "releases": [
     {
+      "version": "1.6.9",
+      "date": "2026-10-26",
+      "notes": [
+        "Steadier links on big clusters: boards answer the phone first, then run the command, so links no longer drop when lots of boards are busy."
+      ]
+    },
+    {
       "version": "1.6.8",
       "date": "2026-10-25",
       "notes": [
