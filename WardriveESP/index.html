@@ -5,81 +5,234 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WardriveESP firmware</title>
 <meta name="description" content="WardriveESP — the one-board ESP32 Wi-Fi and Bluetooth scanner firmware for Wardrive Go on iPhone and Android. Flash it from your browser.">
+<meta name="theme-color" content="#05070a">
 <style>
-  :root { --paper:#06090A; --surface:#0E1618; --ink:#E9F3F0; --muted:#94A9A4; --line:#2C3D3B; --glow:#37ECCB; --ochre:#E0A53C; --danger:#FF5B52; }
+  /* Same family as the Wardrive Uploader dashboard: cyan + magenta on near-black, corner-lit cards, glowing counters. */
+  :root { --bg:#05070a; --bg2:#0a0f16; --ink:#d3e0ec; --head:#e8f4ff; --muted:#7d91a3; --dim:#5f7285; --line:#1a2634;
+          --cyan:#00e5ff; --cyan-dim:#0a8fa3; --mag:#ff2d95; --green:#25f4a7; --amber:#ffb300; --red:#ff4d5e; --grid:rgba(0,229,255,.05); }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font: 16px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
-  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: .5px; }
-  h1 span { color: var(--glow); }
-  .sub { color: var(--muted); margin: 0 0 28px; }
-  h2 { font-size: 13px; letter-spacing: 3px; color: var(--glow); margin: 34px 0 10px; text-transform: uppercase; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
-  .btn { display:inline-block; background: var(--glow); color: var(--paper); font-weight: 700; padding: 14px 20px; border-radius: 8px; text-decoration: none; letter-spacing: .5px; border: 0; font: inherit; cursor: pointer; }
-  .btn.alt { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-  .btn:disabled { opacity: .45; cursor: default; }
-  code { background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 4px; }
-  pre { background: #000; border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 13px; }
+  [hidden] { display: none !important; }
+  * { scrollbar-width: thin; scrollbar-color: #0b6f7e transparent; }
+  html { background: var(--bg); }
+  body { margin:0; color:var(--ink); background: var(--bg); font: 15px/1.6 ui-monospace, "Cascadia Code", "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace; overflow-x: hidden; }
+  .bgfx { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .bgfx > div { position: absolute; }
+  .bgfx .glow { width: 90vmax; height: 90vmax; border-radius: 50%; }
+  .bgfx .g1 { left: -40vmax; top: -46vmax; background: radial-gradient(circle, rgba(0,229,255,.15), rgba(0,229,255,.04) 35%, transparent 65%); animation: drift1 34s ease-in-out infinite alternate; }
+  .bgfx .g2 { right: -42vmax; top: -34vmax; background: radial-gradient(circle, rgba(255,45,149,.12), rgba(255,45,149,.035) 35%, transparent 65%); animation: drift2 41s ease-in-out infinite alternate; }
+  .bgfx .grid { inset: 0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 34px 34px;
+                -webkit-mask: radial-gradient(ellipse 85% 70% at 50% 20%, #000 20%, transparent 80%); mask: radial-gradient(ellipse 85% 70% at 50% 20%, #000 20%, transparent 80%); }
+  .bgfx .vig { inset: 0; background: radial-gradient(ellipse at 50% 30%, transparent 50%, rgba(0,0,0,.55) 100%); }
+  @keyframes drift1 { to { transform: translate(9vmax, 7vmax) scale(1.08); } }
+  @keyframes drift2 { to { transform: translate(-8vmax, 10vmax) scale(1.12); } }
+  main { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 22px 16px 64px; }
+  a { color: var(--cyan); }
+  strong { color: var(--head); }
   .muted { color: var(--muted); }
-  a { color: var(--glow); }
+  code { background: rgba(0,229,255,.07); color: var(--head); padding: 2px 6px; border-radius: 4px; }
+  pre { background: #03060a; border: 1px solid var(--line); border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 12.5px; color: var(--ink); }
   .row { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  ol { padding-left: 22px; }
   ol li { margin: 6px 0; }
-  .term { margin-top: 16px; background: #000; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .term-bar { display:flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; }
-  .term-bar .title { color: var(--glow); letter-spacing: 2px; }
+
+  /* header */
+  .brand { display:flex; align-items:center; gap: 14px; margin: 0 0 8px; }
+  .logo { width: 42px; height: 42px; border: 2px solid var(--cyan); border-radius: 50%; position: relative; flex: none;
+          box-shadow: 0 0 18px rgba(0,229,255,.4), inset 0 0 12px rgba(0,229,255,.25); }
+  .logo::before { content: ""; position: absolute; inset: 8px; border: 2px solid var(--cyan); border-radius: 50%; opacity: .5; }
+  .logo::after { content: ""; position: absolute; left: 50%; top: 50%; width: 17px; height: 2px; background: var(--cyan); transform-origin: left; animation: spin 3s linear infinite; box-shadow: 0 0 8px var(--cyan); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  h1 { font-size: 30px; letter-spacing: 4px; margin: 0; font-weight: 800; text-transform: uppercase;
+       background: linear-gradient(90deg, var(--cyan), var(--mag)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tag-line { color: var(--dim); letter-spacing: 1px; font-size: 11px; text-transform: uppercase; }
+  .sub { color: var(--muted); margin: 10px 0 22px; }
+  h2 { font-size: 11px; letter-spacing: 3px; color: var(--muted); margin: 34px 0 10px; text-transform: uppercase; font-weight: 600; display:flex; align-items:center; gap: 10px; }
+  h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+  .ver { display:inline-flex; gap: 10px; align-items: center; margin: -8px 0 22px; font-size: 12px; color: var(--muted); }
+  .ver b { color: #001318; background: var(--cyan); padding: 3px 9px; border-radius: 20px; letter-spacing: 1px; box-shadow: 0 0 14px rgba(0,229,255,.45); }
+
+  /* cards with the uploader's lit corner */
+  .card { position: relative; overflow: hidden; background: linear-gradient(180deg, var(--bg2), #070b11); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 26px; height: 2px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+  .card::after { content: ""; position: absolute; top: 0; left: 0; width: 2px; height: 26px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+
+  /* buttons */
+  .btn { display:inline-flex; align-items:center; gap: 10px; background: linear-gradient(90deg, var(--cyan-dim), #0b6f7e); color: #001318; border: 1px solid var(--cyan);
+         padding: 12px 20px; border-radius: 8px; font: inherit; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; font-size: 13px; cursor: pointer; text-decoration: none;
+         box-shadow: 0 0 18px rgba(0,229,255,.25); transition: .15s; }
+  .btn:hover:not(:disabled) { background: linear-gradient(90deg, var(--cyan), #14b9cf); box-shadow: 0 0 26px rgba(0,229,255,.5); transform: translateY(-1px); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  .btn.ghost, .btn.alt { background: transparent; color: var(--cyan); box-shadow: none; }
+  .btn.ghost:hover:not(:disabled), .btn.alt:hover:not(:disabled) { background: rgba(0,229,255,.08); }
+  .btn.mag { background: linear-gradient(90deg, #9c1c5c, #6f1444); border-color: var(--mag); color: #ffd9ec; box-shadow: 0 0 18px rgba(255,45,149,.25); }
+  .btn.mag:hover:not(:disabled) { background: linear-gradient(90deg, #c0256f, #8d1a57); box-shadow: 0 0 26px rgba(255,45,149,.5); }
+  .btn svg { width: 16px; height: 16px; flex: none; }
+  .store { display:flex; gap: 8px; flex-wrap: wrap; align-items:center; margin: 0 0 26px; }
+  .pill { display:inline-flex; align-items:center; gap: 6px; border: 1px solid var(--line); border-radius: 30px; padding: 5px 13px; font-size: 12px; letter-spacing: 1px; color: var(--muted); background: #070c12; text-decoration: none; }
+  .pill:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+
+  /* Android note */
+  .droid { position: relative; display:flex; gap: 14px; align-items: center; flex-wrap: wrap; margin: 0 0 22px; padding: 12px 14px; border-radius: 10px;
+           border: 1px solid rgba(37,244,167,.4); background: linear-gradient(100deg, rgba(37,244,167,.1), rgba(37,244,167,.02) 60%), #070c12; }
+  .droid .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: blink 2s infinite; flex: none; }
+  @keyframes blink { 50% { opacity: .45; } }
+  .droid p { margin: 0; flex: 1 1 280px; font-size: 14px; }
+  .droid b { color: var(--green); letter-spacing: 1px; }
+  .droid .btn { padding: 9px 14px; font-size: 12px; background: transparent; color: var(--green); border-color: var(--green); box-shadow: 0 0 14px rgba(37,244,167,.2); }
+  .droid .btn:hover { background: rgba(37,244,167,.1); box-shadow: 0 0 22px rgba(37,244,167,.4); }
+
+  /* flasher */
+  .bisc-note { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+  .label { font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .quick { margin: 0 0 16px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--line); background: #070c12; }
+  .quick .label { display:flex; align-items:center; gap: 8px; margin: 0 0 4px; color: var(--cyan); }
+  .quick p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  .quick .opts { display:flex; flex-direction: column; gap: 10px; }
+  .qopt { display:flex; align-items:center; gap: 12px; flex-wrap: wrap; }
+  .qopt .hint { color: var(--muted); font-size: 12px; }
+  .chips { display:flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .chip-row { --c: var(--cyan); --cr: 0,229,255; display:grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 8px;
+              background: #070c12; border: 1px solid var(--line); transition: border-color .3s, box-shadow .3s, opacity .3s; }
+  .chip-row.alt { --c: var(--mag); --cr: 255,45,149; }
+  .chip-ico { width: 44px; height: 44px; border-radius: 9px; display:grid; place-items:center; color: var(--dim); border: 1px solid var(--line); background: #05090d; transition: .3s; }
+  .chip-ico svg { width: 26px; height: 26px; }
+  .chip-main { min-width: 0; }
+  .chip-top { display:flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .chip-step { font-size: 10px; letter-spacing: 2px; color: var(--c); flex: none; }
+  .chip-name { font-weight: 700; color: var(--head); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .chip-pct { font-size: 15px; font-weight: 800; color: var(--c); flex: none; font-variant-numeric: tabular-nums; text-shadow: 0 0 12px rgba(var(--cr),.5); }
+  .chip-bar { position: relative; height: 6px; margin: 8px 0 6px; border-radius: 6px; background: #0e1620; overflow: hidden; }
+  .chip-bar > div { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 6px; background: var(--c); box-shadow: 0 0 12px rgba(var(--cr),.8); transition: width .25s ease; }
+  .chip-bar::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent); opacity: 0; }
+  .chip-status { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip-row[data-state="busy"] { border-color: rgba(var(--cr),.55); box-shadow: 0 0 26px -10px rgba(var(--cr),.8); }
+  .chip-row[data-state="busy"] .chip-ico { color: var(--c); border-color: rgba(var(--cr),.6); box-shadow: 0 0 16px -4px rgba(var(--cr),.9); animation: glowpulse 1.6s ease-in-out infinite; }
+  .chip-row[data-state="busy"] .chip-bar::after { opacity: 1; animation: sweep 1.3s linear infinite; }
+  .chip-row[data-state="busy"] .chip-status { color: var(--ink); }
+  .chip-row[data-state="ok"] { border-color: rgba(37,244,167,.35); }
+  .chip-row[data-state="ok"] .chip-ico { color: #00170e; background: var(--green); border-color: var(--green); box-shadow: 0 0 16px rgba(37,244,167,.5); }
+  .chip-row[data-state="ok"] .chip-bar > div { width: 100% !important; background: var(--green); box-shadow: 0 0 10px rgba(37,244,167,.7); }
+  .chip-row[data-state="ok"] .chip-pct { color: var(--green); text-shadow: 0 0 12px rgba(37,244,167,.5); }
+  .chip-row[data-state="ok"] .chip-status { color: var(--green); }
+  .chip-row[data-state="err"] { border-color: rgba(255,77,94,.6); }
+  .chip-row[data-state="err"] .chip-ico { color: var(--red); border-color: rgba(255,77,94,.6); }
+  .chip-row[data-state="err"] .chip-bar > div { background: var(--red); box-shadow: none; }
+  .chip-row[data-state="err"] .chip-status { color: var(--red); }
+  .chip-row[data-state="wait"] { opacity: .5; }
+  @keyframes sweep { to { transform: translateX(100%); } }
+  @keyframes glowpulse { 50% { box-shadow: 0 0 22px -2px rgba(var(--cr),1); } }
+  .step-card { margin-top: 12px; display:grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--mag);
+               background: linear-gradient(135deg, rgba(255,45,149,.1), rgba(255,45,149,.02)); box-shadow: 0 0 30px -14px rgba(255,45,149,.9); }
+  .step-card .chip-ico { color: var(--mag); border-color: rgba(255,45,149,.6); }
+  .step-card .kicker { font-size: 10px; letter-spacing: 2px; color: var(--mag); }
+  .step-card h3 { margin: 2px 0 6px; font-size: 16px; color: var(--head); }
+  .step-card p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+  .result { margin-top: 12px; padding: 14px 16px; border-radius: 8px; border: 1px solid rgba(37,244,167,.35); background: radial-gradient(circle at 50% 0, rgba(37,244,167,.07), transparent 70%), #070c12; }
+  .result h3 { display:flex; align-items:center; gap: 10px; margin: 0 0 12px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--green); }
+  .result h3 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+  .counters { display:flex; gap: 12px; margin: 0 0 12px; }
+  .counter { flex: 1; min-width: 0; text-align: center; border: 1px solid var(--line); border-radius: 8px; padding: 12px 8px; background: radial-gradient(circle at 50% 0, rgba(0,229,255,.07), transparent 70%); }
+  .counter .num { font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 20px rgba(0,229,255,.5); font-variant-numeric: tabular-nums; }
+  .counter .lbl { margin-top: 6px; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .counter.mag { background: radial-gradient(circle at 50% 0, rgba(255,45,149,.08), transparent 70%); }
+  .counter.mag .num { color: var(--mag); text-shadow: 0 0 20px rgba(255,45,149,.5); }
+  .facts { display:flex; flex-wrap: wrap; gap: 8px; }
+  .fact { display:inline-flex; gap: 7px; align-items: baseline; padding: 3px 11px; border-radius: 20px; border: 1px solid rgba(0,229,255,.45); background: #05090d; font-size: 12px; color: var(--head); }
+  .fact i { font-style: normal; color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+  .result p { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+  .term { margin-top: 16px; background: #03060a; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .term-bar { display:flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+  .term-bar .title { color: var(--muted); }
   .term-bar .state { color: var(--muted); }
-  .term-bar .state.busy { color: var(--ochre); }
-  .term-bar .state.ok { color: var(--glow); }
-  .term-bar .state.err { color: var(--danger); }
-  .bar { height: 3px; background: var(--line); }
-  .bar > div { height: 100%; width: 0; background: var(--glow); transition: width .2s; }
-  #log { margin: 0; border: 0; border-radius: 0; max-height: 280px; min-height: 120px; overflow: auto; font-size: 12px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
-  #log .ok { color: var(--glow); } #log .err { color: var(--danger); } #log .dim { color: var(--muted); } #log .hi { color: var(--ink); }
-  .ver { display:inline-flex; gap: 10px; align-items: center; margin: -14px 0 28px; font-size: 13px; color: var(--muted); }
-  .ver b { color: var(--paper); background: var(--glow); padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+  .term-bar .state.busy { color: var(--amber); }
+  .term-bar .state.ok { color: var(--green); }
+  .term-bar .state.err { color: var(--red); }
+  #log { margin: 0; border: 0; border-radius: 0; max-height: 220px; min-height: 80px; overflow: auto; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  #log .ok { color: var(--green); } #log .err { color: var(--red); } #log .dim { color: var(--dim); } #log .hi { color: var(--ink); }
+  .update-note { margin-top: 12px; font-size: 14px; }
+
+  /* releases */
   .rel { padding: 12px 0; border-top: 1px solid var(--line); }
   .rel:first-child { border-top: 0; padding-top: 0; }
-  .rel h3 { margin: 0 0 6px; font-size: 15px; }
-  .rel h3 span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
-  .rel h3 em { color: var(--glow); font-style: normal; font-size: 11px; letter-spacing: 2px; margin-left: 8px; }
-  .rel ul { margin: 0; padding-left: 20px; color: var(--muted); }
+  .rel h3 { margin: 0 0 6px; font-size: 15px; color: var(--head); }
+  .rel h3 span { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .rel h3 em { color: #001318; background: var(--cyan); font-style: normal; font-size: 10px; letter-spacing: 2px; margin-left: 8px; padding: 1px 7px; border-radius: 20px; }
+  .rel ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
   .rel li { margin: 3px 0; }
-  .update-note { margin-top: 12px; }
-  .next { margin-top: 16px; border: 1px solid var(--glow); border-radius: 8px; padding: 14px 16px; background: rgba(55,236,203,.06); }
-  .next h3 { margin: 0 0 6px; font-size: 15px; color: var(--glow); }
-  .next p { margin: 0 0 12px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 14px; }
+    h1 { font-size: 24px; letter-spacing: 3px; }
+    .card { padding: 14px; }
+    .btn { width: 100%; justify-content: center; }
+    .droid .btn { width: 100%; justify-content: center; }
+    .chip-row, .step-card { grid-template-columns: 36px 1fr; gap: 10px; padding: 12px; }
+    .chip-ico { width: 36px; height: 36px; }
+    .chip-ico svg { width: 22px; height: 22px; }
+    .counter .num { font-size: 26px; }
+    .chip-top { flex-wrap: wrap; row-gap: 0; }
+    .chip-step { flex-basis: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<div class="bgfx" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="grid"></div><div class="vig"></div></div>
 <main>
-  <h1>Wardrive<span>ESP</span></h1>
+  <div class="droid">
+    <span class="dot" aria-hidden="true"></span>
+    <p><b>ON ANDROID?</b> Use the flasher built into Wardrive Go for the best experience. One tap, both chips on a Biscuit, all automatic.</p>
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.rocketgod.wardrive">Get it on Google Play</a>
+  </div>
+  <div class="brand">
+    <div class="logo" aria-hidden="true"></div>
+    <div>
+      <h1>WardriveESP</h1>
+      <div class="tag-line">ESP32 scanner firmware // Wi-Fi + Bluetooth // for Wardrive Go</div>
+    </div>
+  </div>
   <p class="sub">The one-board ESP32 Wi-Fi and Bluetooth scanner for <strong>Wardrive Go</strong> on iPhone and Android. It streams every network it hears to the app over Bluetooth. No pairing, no setup, no terminal.</p>
-  <div class="row" style="margin:-10px 0 28px">
-    <a class="btn alt" href="https://apps.apple.com/app/id6783390938">Wardrive Go on the App Store</a>
-    <a class="btn alt" href="https://play.google.com/store/apps/details?id=com.rocketgod.wardrive">Wardrive Go on Google Play</a>
-    <span class="muted">free</span>
+  <div class="store">
+    <a class="pill" href="https://apps.apple.com/app/id6783390938">Wardrive Go on the App Store ↗</a>
+    <a class="pill" href="https://play.google.com/store/apps/details?id=com.rocketgod.wardrive">Wardrive Go on Google Play ↗</a>
+    <span class="muted" style="font-size:12px">free</span>
   </div>
   <div class="ver" id="ver" hidden><b id="ver-num"></b><span id="ver-date"></span></div>
 
   <h2>Flash it from your browser</h2>
-  <div class="card">
+  <div class="card flasher">
     <ol>
       <li>Plug an <strong>ESP32-C3, C5, C6 or S3</strong> into a computer over USB.</li>
       <li>Open this page in <strong>Chrome or Edge on that computer</strong>.</li>
       <li>Hit the button and pick the board's port. It detects the chip and flashes the right build in about a minute.</li>
     </ol>
-    <p class="muted" style="margin:0 0 8px">Biscuit Pro or Ultra? It has two chips and two ports. Flash either one and the page asks for the other.</p>
-    <div class="row" style="margin-top:8px">
-      <button id="flash" class="btn">Connect &amp; flash WardriveESP</button>
+    <p class="bisc-note">Biscuit Pro or Ultra? It has two chips and two ports. Flash either one and the page asks for the other.</p>
+    <div class="quick" id="quick" hidden>
+      <div class="label"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)"></span>Welcome back</div>
+      <p>One click updates a board you flashed here before.</p>
+      <div class="opts" id="quick-opts"></div>
     </div>
-    <div class="next" id="next" hidden>
-      <h3 id="next-title"></h3>
-      <p id="next-text"></p>
-      <button id="flash2" class="btn"></button>
+    <div class="row">
+      <button id="flash" class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="flash-label">Connect &amp; flash WardriveESP</span></button>
+    </div>
+    <div class="chips" id="chips" hidden></div>
+    <div class="result" id="result" hidden>
+      <h3><span class="dot" aria-hidden="true"></span><span id="result-title"></span></h3>
+      <div class="counters" id="counters"></div>
+      <div class="facts" id="facts"></div>
+      <p id="result-text"></p>
+    </div>
+    <div class="step-card" id="next" hidden>
+      <div class="chip-ico" id="next-ico"></div>
+      <div>
+        <div class="kicker" id="next-kicker"></div>
+        <h3 id="next-title"></h3>
+        <p id="next-text"></p>
+        <button id="flash2" class="btn mag"></button>
+      </div>
     </div>
     <div class="term">
-      <div class="term-bar"><span class="title">CONSOLE</span><span id="state" class="state">ready</span></div>
-      <div class="bar"><div id="progress"></div></div>
+      <div class="term-bar"><span class="title">Console</span><span id="state" class="state">ready</span></div>
       <pre id="log"></pre>
     </div>
     <ol start="4">
@@ -129,10 +282,12 @@ const BISCUIT_BOARDS = ["biscuit_ultra", "biscuit_pro", "biscuit_dual"];
 const C5_GAP_MS = 10000;   // bench rule: about 10 s between ROM sessions on a Biscuit C5
 const MESH_RE = /SerialBLEInterface|BLE: (?:readBytes|writeBytes|onConnect)|\[PowerFSM\]|\[SerialConsole\]|E S H T|meshtastic|meshcore/i;
 const BISCUIT_RE = /Biscuit[ _](?:Ultra|Pro)|biscuit_(?:ultra|pro|dual)|WROOM BLE Gateway/i;
+const CHIP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
 
-const btn = document.getElementById("flash"), logEl = document.getElementById("log");
-const stateEl = document.getElementById("state"), bar = document.getElementById("progress");
-const nextBox = document.getElementById("next"), nextBtn = document.getElementById("flash2");
+const $ = id => document.getElementById(id);
+const btn = $("flash"), logEl = $("log"), stateEl = $("state");
+const nextBox = $("next"), nextBtn = $("flash2"), chipsEl = $("chips");
 
 function line(text, cls = "dim") {
   const t = String(text).replace(/\r?\n$/, "");
@@ -144,10 +299,50 @@ function line(text, cls = "dim") {
   while (logEl.childElementCount > 1500) logEl.removeChild(logEl.firstChild);
   logEl.scrollTop = logEl.scrollHeight;
 }
-let part = "";
-function state(text, cls = "") { stateEl.textContent = part && cls === "busy" ? `${part} · ${text}` : text; stateEl.className = "state " + cls; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function modelName(b) { return b === "biscuit_ultra" ? "Biscuit Ultra" : b === "biscuit_pro" ? "Biscuit Pro" : "Biscuit Pro / Ultra"; }
+
+// ---- One card per chip: step label, name, its own progress bar and status ----
+let row = null;   // the chip card the current session reports to
+function newRow(step, name) {
+  const el = document.createElement("div");
+  el.className = "chip-row";
+  el.dataset.state = "idle";
+  el.innerHTML = `<div class="chip-ico">${CHIP_SVG}</div><div class="chip-main"><div class="chip-top"><span class="chip-step"></span><span class="chip-name"></span><span class="chip-pct"></span></div><div class="chip-bar"><div></div></div><div class="chip-status"></div></div>`;
+  const q = s => el.querySelector(s);
+  const r = {
+    el,
+    step(t) { q(".chip-step").textContent = t; return r; },
+    name(t) { q(".chip-name").textContent = t; el.classList.toggle("alt", /co-processor/.test(t)); return r; },
+    status(t, st) {
+      q(".chip-status").textContent = t;
+      if (st) el.dataset.state = st;
+      q(".chip-ico").innerHTML = st === "ok" ? CHECK_SVG : CHIP_SVG;
+      if (st === "ok") q(".chip-pct").textContent = "100%";
+      return r;
+    },
+    pct(f) {
+      const p = Math.round(Math.max(0, Math.min(1, f)) * 100);
+      q(".chip-bar > div").style.width = `${p}%`;
+      q(".chip-pct").textContent = p ? `${p}%` : "";
+    },
+  };
+  r.step(step).name(name);
+  chipsEl.appendChild(el);
+  chipsEl.hidden = false;
+  return r;
+}
+const WORDS = {
+  listening: "Listening to the board", connecting: "Connecting", downloading: "Downloading", "erasing + flashing": "Erasing and flashing",
+  flashing: "Flashing", restarting: "Restarting", checking: "Checking that it booted", "reading the board": "Reading the board",
+  waiting: "Letting the C5 settle", done: "Done", failed: "Failed", ready: "Ready",
+};
+function state(text, cls = "") {
+  stateEl.textContent = text;
+  stateEl.className = "state " + cls;
+  if (row) row.status(WORDS[text] || text, cls === "busy" ? "busy" : cls === "ok" ? "ok" : cls === "err" ? "err" : "idle");
+}
+function progress(f) { if (row) row.pct(f); }
 
 let latest = "", coproc = "", coprocParts = null;
 function fmtDate(s) {
@@ -188,17 +383,17 @@ const versionReady = fetchVersion().then(v => {
   if (/^\d+(\.\d+){1,3}$/.test(String(v.coproc || "").trim())) {
     coproc = String(v.coproc).trim();
     coprocParts = parseParts(v.coproc_parts);
-    document.getElementById("coproc-manual").hidden = false;
-    document.getElementById("coproc-bin").href = `bins/esp32/wardrive-coproc-merged.bin?v=${encodeURIComponent(coproc)}`;
+    $("coproc-manual").hidden = false;
+    $("coproc-bin").href = `bins/esp32/wardrive-coproc-merged.bin?v=${encodeURIComponent(coproc)}`;
   }
-  document.getElementById("ver-num").textContent = `WardriveESP ${v.latest}`;
-  document.getElementById("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
-  document.getElementById("ver").hidden = false;
-  btn.textContent = `Connect & flash WardriveESP ${v.latest}`;
-  const zip = document.getElementById("zip");
+  $("ver-num").textContent = `WardriveESP ${v.latest}`;
+  $("ver-date").textContent = v.date ? `released ${fmtDate(v.date)}` : "";
+  $("ver").hidden = false;
+  $("flash-label").textContent = `Connect & flash WardriveESP ${v.latest}`;
+  const zip = $("zip");
   zip.textContent = `Download WardriveESP ${v.latest} (.zip)`;
   zip.href = `WardriveESP.zip?v=${encodeURIComponent(v.latest)}`;
-  const box = document.getElementById("releases");
+  const box = $("releases");
   for (const r of v.releases || []) {
     const item = el("div", "rel");
     const h = el("h3", "", r.version);
@@ -210,9 +405,8 @@ const versionReady = fetchVersion().then(v => {
     item.appendChild(ul);
     box.appendChild(item);
   }
-  if (box.childElementCount) { box.hidden = false; document.getElementById("releases-h").hidden = false; }
+  if (box.childElementCount) { box.hidden = false; $("releases-h").hidden = false; }
 }).catch(() => {});
-function progress(f) { bar.style.width = `${Math.round(Math.max(0, Math.min(1, f)) * 100)}%`; }
 
 const terminal = {
   clean() {},
@@ -480,31 +674,11 @@ async function write(loader, files, eraseAll) {
   progress(1);
 }
 
-// ---- The flow ----
-// mode: "any" = the main button (whatever board), "coproc" = step 2 after a C5 (the Biscuit's ESP32 on the CH340),
-// "c5" = step 2 after the co-processor (the Biscuit's C5 on native USB).
-let busy = false;
-function setBusy(b) { busy = b; btn.disabled = b; nextBtn.disabled = b; }
-function showNext(kind, strong) {
-  const t = document.getElementById("next-title"), p = document.getElementById("next-text");
-  if (kind === "coproc") {
-    t.textContent = strong ? "Step 2 of 2: the second chip" : "Biscuit Pro or Ultra?";
-    p.textContent = strong
-      ? `Your Biscuit has a second chip for the battery gauge and the second radio. Hit the button and pick the USB-SERIAL CH340 port. Co-processor ${coproc}.`
-      : `It has a second chip for the battery gauge and the second radio. Flash it too: hit the button and pick the USB-SERIAL CH340 port. Any other C5 board is done.`;
-    nextBtn.textContent = "Flash the second chip";
-  } else {
-    t.textContent = "Step 2 of 2: the main chip";
-    p.textContent = "Now the ESP32-C5. Hit the button and pick the board's other port (USB JTAG/serial debug unit).";
-    nextBtn.textContent = "Flash the main chip";
-  }
-  nextBox.dataset.kind = kind;
-  nextBox.hidden = false;
-}
-function hideNext() { nextBox.hidden = true; delete nextBox.dataset.kind; }
-
-async function run(port, mode) {
-  setBusy(true); progress(0);
+// ---- One chip, one session ----
+// mode: "any" = whatever board the user picked, "coproc" = the Biscuit's ESP32 on the CH340, "c5" = the Biscuit's C5.
+// Returns { kind: "bridge" | "coproc" | "refused" | "canceled" | "failed", ... }. Errors are logged and shown here.
+async function runChip(port, mode, strict = false) {
+  progress(0);
   const info = port.getInfo ? port.getInfo() : {};
   const nativeUsb = info.usbVendorId === USB_JTAG.usbVendorId && info.usbProductId === USB_JTAG.usbProductId;
   let s = null, chip = "", wrote = false;
@@ -524,7 +698,8 @@ async function run(port, mode) {
       if (MESH_RE.test(heard) && !confirm("This board runs MeshCore or Meshtastic.\n\nFlashing WardriveESP erases it and its settings. Reflash the mesh firmware to go back.\n\nFlash anyway?")) {
         line("Canceled. The mesh firmware is untouched.");
         state("ready");
-        return;
+        if (row) row.status("Canceled. The mesh firmware is untouched.", "idle");
+        return { kind: "canceled" };
       }
     }
     if (nativeUsb) await c5Gap();
@@ -533,14 +708,13 @@ async function run(port, mode) {
     s = await connect(port, mode === "coproc");
     chip = s.loader.chip.CHIP_NAME;
     line(`Detected ${s.desc}`, "ok");
+    if (row) row.name(chip === "ESP32" ? "ESP32 · co-processor" : `${chip} · WardriveESP`);
 
     if (chip === "ESP32") {
       if (mode === "c5") throw new Error("That's the Biscuit's ESP32. Pick the other port (USB JTAG/serial debug unit) for the C5.");
       if (!coproc) throw new Error("ESP32 isn't supported. WardriveESP runs on ESP32-C3, C5, C6 and S3.");
       await close(false);   // the probe resets the chip into its firmware itself
-      if (mode === "any") part = "1/2 ESP32";
-      await flashCoproc(port, mode);
-      return;
+      return await flashCoproc(port, mode, strict);
     }
     if (mode === "coproc") throw new Error(`Expected the Biscuit's ESP32, found ${chip}. Pick the USB-SERIAL CH340 port.`);
     if (mode === "c5" && chip !== "ESP32-C5") throw new Error(`Expected the Biscuit's ESP32-C5, found ${chip}.`);
@@ -568,15 +742,9 @@ async function run(port, mode) {
     } else {
       line("It didn't answer over USB yet. That's OK if it links in the app.");
     }
-    line("Done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.", "ok");
     state("done", "ok");
-    part = "";
-    if (mode === "c5") { line("Both chips are done.", "ok"); hideNext(); return; }
-    if (chip === "ESP32-C5" && coproc) {
-      let strong = biscuit;
-      try { strong ||= (await navigator.serial.getPorts()).some(p => { const i = p.getInfo(); return i.usbVendorId === CH340.usbVendorId && i.usbProductId === CH340.usbProductId; }); } catch {}
-      showNext("coproc", strong);
-    }
+    if (row) row.status(caps ? `WardriveESP ${caps.fw || latest} verified` : `WardriveESP ${latest} written`, "ok");
+    return { kind: "bridge", chip, caps, biscuit, port };
   } catch (e) {
     const msg = e && e.message ? e.message : String(e);
     line(`Failed: ${msg}`, "err");
@@ -587,27 +755,33 @@ async function run(port, mode) {
     if (nativeUsb && !hadLoader && !chip) { await plainReset(port); lastC5End = Date.now(); }
     if (/failed to open serial port|port is already open|access denied/i.test(msg)) {
       line("The port is busy. Close any other app or tab using it (Arduino IDE, serial monitor), or unplug and replug the board, then try again.", "hi");
-    } else if (!/isn't supported|Expected|Pick the|Secure|encryption|isn't a Biscuit/i.test(msg)) {
+    } else if (!/isn't supported|Expected|Pick the|Secure|encryption/i.test(msg)) {
       line("Hold the board's BOOT button, tap RESET (or replug while holding BOOT), release BOOT, then try again.", "hi");
     }
     state("failed", "err");
+    if (row) row.status(msg, "err");
+    return { kind: "failed", msg };
   } finally {
     await close(false);
-    setBusy(false);
   }
 }
 
 // The Biscuit Pro / Ultra co-processor onto the classic ESP32 WROOM (CH340): read the model from its boot log,
-// write the image, plain reset, then wait for its hello and store the model.
-async function flashCoproc(port, mode) {
+// write the image, plain reset, then wait for its hello and store the model. Throws on failure.
+// Only a port the user picked in step 2 may be flashed without the Biscuit boot log. A port reused without a
+// picker ([strict]) could be another board's CH340, so it needs the boot log.
+async function flashCoproc(port, mode, strict) {
   let s = null;
   try {
     state("reading the board", "busy");
     const w = await probeWroom(port);
-    if (!w && mode !== "coproc") {
-      line("This ESP32 isn't a Biscuit Pro or Ultra (no Biscuit boot log). WardriveESP runs on ESP32-C3, C5, C6 and S3.", "err");
+    if (!w && (mode !== "coproc" || strict)) {
+      const msg = strict ? "The CH340 port this browser already allowed didn't show a Biscuit boot log. Pick the Biscuit's port yourself."
+        : "This ESP32 isn't a Biscuit Pro or Ultra (no Biscuit boot log). WardriveESP runs on ESP32-C3, C5, C6 and S3.";
+      line(msg, "err");
       state("failed", "err");
-      return;
+      if (row) row.status("Not a Biscuit Pro or Ultra", "err");
+      return { kind: "refused", strict };
     }
     if (w) line(`${modelName(w.board)} ESP32 found, running ${w.fw ? "co-processor " + w.fw : "the stock Biscuit firmware"}.`, "ok");
     else line("Couldn't read the Biscuit's model from its boot log. Flashing the co-processor anyway.", "hi");
@@ -636,9 +810,8 @@ async function flashCoproc(port, mode) {
     if (hello) line(`Co-processor ${hello.fw} running, board ${modelName(hello.board)}. Battery shows once the C5 links.`, "ok");
     else line(`Co-processor ${coproc} written, no answer yet. Replug the board to check.`, "hi");
     state("done", "ok");
-    part = "";
-    if (mode === "coproc") { line("Both chips are done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.", "ok"); hideNext(); }
-    else showNext("c5");
+    if (row) row.status(hello ? `Co-processor ${hello.fw} running` : `Co-processor ${coproc} written, replug to check`, "ok");
+    return { kind: "coproc", hello, board: (hello && hello.board) || board };
   } catch (e) {
     if (s) {
       try { await s.loader.after("hard_reset", false); } catch {}
@@ -646,6 +819,245 @@ async function flashCoproc(port, mode) {
     }
     throw e;
   }
+}
+
+// ---- Remembered boards: one-click updates on ports the browser already allowed ----
+// Web Serial exposes only the USB vendor and product id (no serial number), so boards are keyed by vid:pid.
+const MEM_KEY = "wardriveesp-flasher-v1";
+const idOf = i => `${(i.usbVendorId || 0).toString(16).padStart(4, "0")}:${(i.usbProductId || 0).toString(16).padStart(4, "0")}`;
+const C5_ID = idOf(USB_JTAG), CH_ID = idOf(CH340);
+function loadMem() {
+  try { const m = JSON.parse(localStorage.getItem(MEM_KEY) || "{}"); return { biscuit: m.biscuit || null, singles: m.singles || {} }; }
+  catch { return { biscuit: null, singles: {} }; }
+}
+function remember(fn) {
+  try { const m = loadMem(); fn(m); localStorage.setItem(MEM_KEY, JSON.stringify(m)); } catch {}
+}
+const rememberBiscuit = board => remember(m => { m.biscuit = { board: board || (m.biscuit && m.biscuit.board) || "biscuit_dual" }; delete m.singles[C5_ID]; delete m.singles[CH_ID]; });
+const rememberSingle = (port, chip) => remember(m => { m.singles[idOf(port.getInfo())] = { chip }; });
+async function livePorts() {
+  try { return (await navigator.serial.getPorts()).filter(p => p.connected !== false); } catch { return []; }
+}
+// The one allowed port with these ids, or null when there is none or more than one (ambiguous).
+async function grantedOne(f, except = []) {
+  const m = (await livePorts()).filter(p => !except.includes(p) && idOf(p.getInfo()) === idOf(f));
+  return m.length === 1 ? m[0] : null;
+}
+
+let quick = [];
+async function renderQuick() {
+  const box = $("quick"), opts = $("quick-opts");
+  if (busy || !nextBox.hidden || !("serial" in navigator)) { box.hidden = true; return; }
+  await Promise.race([versionReady, sleep(3000)]);
+  const mem = loadMem(), ports = await livePorts();
+  const by = {};
+  for (const p of ports) (by[idOf(p.getInfo())] ||= []).push(p);
+  quick = [];
+  if (mem.biscuit && coproc) {
+    const c5s = by[C5_ID] || [], chs = by[CH_ID] || [];
+    if (c5s.length <= 1 && chs.length <= 1 && (c5s.length || chs.length))
+      quick.push({ type: "both", c5: c5s[0] || null, ch: chs[0] || null, board: mem.biscuit.board });
+  }
+  for (const [id, rec] of Object.entries(mem.singles)) {
+    if (quick.length && (id === C5_ID || id === CH_ID)) continue;
+    if ((by[id] || []).length === 1) quick.push({ type: "single", port: by[id][0], chip: rec.chip || "board" });
+  }
+  opts.textContent = "";
+  quick.slice(0, 3).forEach((q, i) => {
+    const o = el("div", "qopt"), b = el("button", "btn" + (i ? " ghost" : ""));
+    b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>`;
+    b.appendChild(el("span", "", q.type === "both" ? "Update both chips" : `Update ${q.chip} again`));
+    b.addEventListener("click", () => quickGo(q));
+    o.appendChild(b);
+    const hint = q.type === "both"
+      ? `${modelName(q.board)} · C5 + ESP32${!q.c5 ? " · you'll pick the C5 port" : !q.ch ? " · you'll pick the CH340 port" : " · no port picking"}`
+      : "no port picking";
+    o.appendChild(el("span", "hint", hint));
+    opts.appendChild(o);
+  });
+  box.hidden = !quick.length;
+}
+
+// ---- Flows ----
+let busy = false, results = [], used = [];
+function setBusy(b) {
+  busy = b; btn.disabled = b; nextBtn.disabled = b;
+  for (const x of document.querySelectorAll("#quick button")) x.disabled = b;
+  if (b) $("quick").hidden = true;
+}
+function beginFlow() {
+  hideNext(); $("result").hidden = true;
+  chipsEl.textContent = ""; chipsEl.hidden = true; logEl.textContent = "";
+  results = []; used = []; row = null;
+}
+function showNext(kind, strong, reuse) {
+  $("next-ico").innerHTML = CHIP_SVG;
+  $("next-kicker").textContent = kind === "coproc" && !strong ? "ONE MORE CHIP?" : "STEP 2 OF 2";
+  if (kind === "coproc") {
+    $("next-title").textContent = strong ? "The second chip" : "Biscuit Pro or Ultra?";
+    $("next-text").textContent = (strong
+      ? `Your Biscuit has a second chip for the battery gauge and the second radio. Co-processor ${coproc}.`
+      : "It has a second chip for the battery gauge and the second radio. Flash it too. Any other C5 board is done.")
+      + (reuse ? " It uses the CH340 port you already allowed." : " Hit the button and pick the USB-SERIAL CH340 port.");
+    nextBtn.textContent = "Flash the second chip";
+  } else {
+    $("next-title").textContent = "The main chip";
+    $("next-text").textContent = "Now the ESP32-C5." + (reuse ? " It uses the port you already allowed." : " Hit the button and pick the board's other port (USB JTAG/serial debug unit).");
+    nextBtn.textContent = "Flash the main chip";
+  }
+  nextBox.dataset.kind = kind;
+  nextBox.dataset.strong = strong ? "1" : "";
+  nextReuse = reuse || null;
+  nextBox.hidden = false;
+}
+let nextReuse = null;
+function hideNext() { nextBox.hidden = true; delete nextBox.dataset.kind; nextReuse = null; }
+
+function factsOf(list) {
+  const out = [], add = (k, v) => { if (v && !out.some(f => f[0] === k)) out.push([k, v]); };
+  for (const r of list) {
+    if (r.kind === "bridge") {
+      const c = r.caps || {};
+      add("WardriveESP", c.fw || latest);
+      add("Chip", (c.chip || r.chip || "").toUpperCase().replace("ESP32C", "ESP32-C").replace("ESP32S", "ESP32-S"));
+      if (c.board_name) add("Board", c.board_name.replace(/_/g, " "));
+      if (c.batt === "1") add("Battery", "on");
+      if (c.coproc) add("Second radio", c.coproc);
+    } else if (r.kind === "coproc") {
+      add("Co-processor", (r.hello && r.hello.fw) || coproc);
+      add("Board", modelName(r.board));
+    }
+  }
+  return out;
+}
+function finish(list, text) {
+  const verified = list.some(r => r.caps || r.hello);
+  $("result-title").textContent = verified ? "Flashed and verified" : "Flashed";
+  const facts = factsOf([...list].sort((a, b) => (a.kind === "bridge" ? 0 : 1) - (b.kind === "bridge" ? 0 : 1))), cbox = $("counters"), box = $("facts");
+  cbox.textContent = ""; box.textContent = "";
+  for (const [k, v] of facts) {
+    if (k === "WardriveESP" || k === "Co-processor") {
+      const c = el("div", "counter" + (k === "Co-processor" ? " mag" : ""));
+      c.appendChild(el("div", "num", v)); c.appendChild(el("div", "lbl", k));
+      cbox.appendChild(c);
+    } else { const f = el("span", "fact"); f.appendChild(el("i", "", k)); f.appendChild(document.createTextNode(v)); box.appendChild(f); }
+  }
+  cbox.hidden = !cbox.childElementCount;
+  $("result-text").textContent = text || "Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.";
+  $("result").hidden = false;
+  line(text || "Done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.", "ok");
+}
+
+// After the co-processor: ask the C5 again. Its WD:CAPS now names the board and the battery when both chips talk.
+async function checkPair() {
+  const br = results.find(x => x.kind === "bridge" && x.port);
+  if (!br) return;
+  state("checking", "busy");
+  if (row) row.status("Checking that both chips talk", "busy");
+  const caps = await verifyWardrive(br.port, br.port.getInfo());
+  if (caps && /^biscuit_/.test(caps.board || "")) {
+    br.caps = caps;
+    line(`Both chips are talking: ${caps.board_name ? caps.board_name.replace(/_/g, " ") : modelName(caps.board)}${caps.batt === "1" ? ", battery gauge on" : ""}${caps.coproc ? ", second radio " + caps.coproc : ""}.`, "ok");
+  } else {
+    line("The C5 hasn't reported the co-processor yet. It links within a few seconds once both chips are up.");
+  }
+  state("done", "ok");
+}
+
+// Whatever board the user picked (main button, or a one-click update of a single board).
+async function startAny(port) {
+  beginFlow();
+  setBusy(true);
+  try {
+    row = newRow("BOARD", "Detecting the chip");
+    used.push(port);
+    const r = await runChip(port, "any");
+    if (r.kind === "bridge") {
+      results.push(r);
+      if (r.chip === "ESP32-C5" && coproc) {
+        const reuse = await grantedOne(CH340, used);
+        const strong = r.biscuit || !!reuse || !!loadMem().biscuit;
+        if (strong) { row.step("STEP 1 OF 2"); rememberBiscuit(r.caps && BISCUIT_BOARDS.includes(r.caps.board) ? r.caps.board : null); }
+        else rememberSingle(port, r.chip);
+        finish(results, strong ? "Main chip done. Now the second chip." : undefined);
+        showNext("coproc", strong, reuse);
+      } else {
+        rememberSingle(port, r.chip);
+        finish(results);
+      }
+    } else if (r.kind === "coproc") {
+      results.push(r);
+      row.step("STEP 1 OF 2");
+      rememberBiscuit(r.board);
+      finish(results, "Second chip done. Now the main chip.");
+      showNext("c5", true, await grantedOne(USB_JTAG, used));
+    }
+  } finally { setBusy(false); renderQuick(); }
+}
+
+// Step 2 of a Biscuit: the other chip, on a port already allowed or a freshly picked one.
+async function stepTwo(kind, port, reused) {
+  setBusy(true);
+  try {
+    hideNext();
+    for (const r of chipsEl.querySelectorAll(".chip-row[data-step2]")) r.remove();
+    row = newRow("STEP 2 OF 2", kind === "coproc" ? "ESP32 · co-processor" : "ESP32-C5 · WardriveESP");
+    row.el.dataset.step2 = "1";
+    used.push(port);
+    line(kind === "coproc" ? "Second chip: the ESP32 co-processor." : "Main chip: the ESP32-C5.", "hi");
+    const r = await runChip(port, kind, reused);
+    if (r.kind === "bridge" || r.kind === "coproc") {
+      results.push(r);
+      const first = chipsEl.querySelector(".chip-row:not([data-step2])");
+      if (first) first.querySelector(".chip-step").textContent = "STEP 1 OF 2";
+      if (r.kind === "coproc") { const done = row.el.querySelector(".chip-status").textContent; await checkPair(); row.status(done, "ok"); }
+      const cp = results.find(x => x.kind === "coproc");
+      rememberBiscuit(cp ? cp.board : r.caps && BISCUIT_BOARDS.includes(r.caps.board) ? r.caps.board : null);
+      finish(results, "Both chips are done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.");
+    } else {
+      showNext(kind, true, r.strict ? null : await grantedOne(kind === "coproc" ? CH340 : USB_JTAG, used.filter(p => p !== port)));
+    }
+  } finally { setBusy(false); renderQuick(); }
+}
+
+// One click for a remembered Biscuit: the C5, then the ESP32, no pickers for ports already allowed.
+async function updateBoth(c5Port, chPort, chPicked) {
+  beginFlow();
+  setBusy(true);
+  try {
+    const r1 = newRow("STEP 1 OF 2", "ESP32-C5 · WardriveESP");
+    const r2 = newRow("STEP 2 OF 2", "ESP32 · co-processor").status("Waiting for the C5", "wait");
+    r2.el.dataset.step2 = "1";
+    used.push(c5Port, chPort);
+    row = r1;
+    line("Updating both chips: the C5 first, then the ESP32.", "hi");
+    const a = await runChip(c5Port, "c5");
+    if (a.kind !== "bridge") { r2.status("Skipped until the C5 flashes", "wait"); return; }
+    results.push(a);
+    row = r2;
+    line("Second chip: the ESP32 co-processor.", "hi");
+    const b = await runChip(chPort, "coproc", chPicked !== chPort);
+    if (b.kind !== "coproc") { showNext("coproc", true, b.strict ? null : chPort); return; }
+    results.push(b);
+    { const done = r2.el.querySelector(".chip-status").textContent; await checkPair(); r2.status(done, "ok"); }
+    rememberBiscuit(b.board);
+    finish(results, "Both chips are done. Turn on the Wi-Fi bridge in Wardrive Go and it links by itself.");
+  } finally { setBusy(false); renderQuick(); }
+}
+
+async function quickGo(q) {
+  if (busy) return;
+  if (q.type === "single") return startAny(q.port);
+  let { c5, ch } = q, picked = null;
+  try {
+    if (!c5) c5 = await navigator.serial.requestPort({ filters: [USB_JTAG] });
+    if (!ch) ch = picked = await navigator.serial.requestPort({ filters: [CH340] });
+  } catch {
+    line(!c5 ? "No port selected. No USB JTAG port in the list? Unplug and replug the board."
+      : "No port selected. No CH340 in the list? Install the CH340 driver, then unplug and replug the board.");
+    return;
+  }
+  await updateBoth(c5, ch, picked);
 }
 
 if (!("serial" in navigator)) {
@@ -658,6 +1070,9 @@ if (!("serial" in navigator)) {
   state("unsupported", "err");
 } else {
   line("Plug in the board and press Connect & flash.");
+  renderQuick();
+  navigator.serial.addEventListener("connect", () => renderQuick());
+  navigator.serial.addEventListener("disconnect", () => renderQuick());
 }
 
 btn.addEventListener("click", async () => {
@@ -665,25 +1080,24 @@ btn.addEventListener("click", async () => {
   let port;
   try { port = await navigator.serial.requestPort(); }
   catch { line("No port selected."); return; }
-  hideNext(); logEl.textContent = ""; part = "";
-  await run(port, "any");
+  await startAny(port);
 });
 
 nextBtn.addEventListener("click", async () => {
   if (busy) return;
   const kind = nextBox.dataset.kind;
   if (!kind) return;
-  let port;
-  try { port = await navigator.serial.requestPort({ filters: [kind === "coproc" ? CH340 : USB_JTAG] }); }
-  catch {
-    line(kind === "coproc"
-      ? "No port selected. No CH340 in the list? Install the CH340 driver, then unplug and replug the board."
-      : "No port selected. No USB JTAG port in the list? Unplug and replug the board.");
-    return;
+  let port = nextReuse;
+  if (!port) {
+    try { port = await navigator.serial.requestPort({ filters: [kind === "coproc" ? CH340 : USB_JTAG] }); }
+    catch {
+      line(kind === "coproc"
+        ? "No port selected. No CH340 in the list? Install the CH340 driver, then unplug and replug the board."
+        : "No port selected. No USB JTAG port in the list? Unplug and replug the board.");
+      return;
+    }
   }
-  part = kind === "coproc" ? "2/2 ESP32" : "2/2 C5";
-  line(kind === "coproc" ? "Second chip: the ESP32 co-processor." : "Main chip: the ESP32-C5.", "hi");
-  await run(port, kind);
+  await stepTwo(kind, port, port === nextReuse);
 });
 </script>
 </body>
