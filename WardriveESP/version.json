@@ -3,6 +3,14 @@
   "date": "2026-10-28",
   "releases": [
     {
+      "version": "1.7.0",
+      "date": "2026-10-28",
+      "notes": [
+        "Color screens on the Koko Marauder V8 and Marauder Mini v3: live dashboard and app alerts",
+        "Experimental Wi-Fi radar mode on ESP32-C5 and C6 boards"
+      ]
+    },
+    {
       "version": "1.6.9",
       "date": "2026-10-26",
       "notes": [
