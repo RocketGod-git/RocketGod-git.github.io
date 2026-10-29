@@ -3,6 +3,13 @@
   "date": "2026-10-29",
   "releases": [
     {
+      "version": "1.7.2",
+      "date": "2026-10-29",
+      "notes": [
+        "Fixes capture not starting on some boards (stuck at 0 APs) after 1.7.1"
+      ]
+    },
+    {
       "version": "1.7.1",
       "date": "2026-10-29",
       "notes": [
