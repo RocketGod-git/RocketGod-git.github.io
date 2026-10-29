@@ -3,6 +3,13 @@
   "date": "2026-10-29",
   "releases": [
     {
+      "version": "1.7.1",
+      "date": "2026-10-29",
+      "notes": [
+        "Accurate AP counts in capture mode and on board screens: APs in range now, plus the session total"
+      ]
+    },
+    {
       "version": "1.7.0",
       "date": "2026-10-28",
       "notes": [
