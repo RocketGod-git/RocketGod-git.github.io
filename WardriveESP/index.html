@@ -284,6 +284,8 @@ const BISCUIT_BOARDS = ["biscuit_ultra", "biscuit_pro", "biscuit_dual"];
 const C5_GAP_MS = 10000;   // bench rule: about 10 s between ROM sessions on a Biscuit C5
 const MESH_RE = /SerialBLEInterface|BLE: (?:readBytes|writeBytes|onConnect)|\[PowerFSM\]|\[SerialConsole\]|E S H T|meshtastic|meshcore/i;
 const BISCUIT_RE = /Biscuit[ _](?:Ultra|Pro)|biscuit_(?:ultra|pro|dual)|WROOM BLE Gateway/i;
+// A Marauder Mini v3: Marauder's `info` ("Hardware: Marauder Mini v3") or WardriveESP's CAPS (board=marauder_mini_v3).
+const MINI_RE = /Hardware:\s*Marauder Mini v3|board=marauder_mini_v3/i;
 const CHIP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></svg>';
 const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
 
@@ -592,9 +594,28 @@ function capsOf(t) {
   for (const kv of m[m.length - 1].split(" ").slice(1)) { const i = kv.indexOf("="); if (i > 0) caps[kv.slice(0, i)] = kv.slice(i + 1); }
   return caps;
 }
+// Before the erase: is this a Marauder Mini v3? Its screen can't be read back, so WardriveESP knows the board only from
+// `board marauder_mini_v3` in NVS, which the erase clears. Asks Marauder's `info`, then WardriveESP's CAPS.
+async function isMiniV3(port, heard) {
+  if (MINI_RE.test(heard)) return true;
+  try {
+    return await serial(port, async io => {
+      await io.quiet();
+      await io.write("info\n");
+      let t = await io.read(1500, s => MINI_RE.test(s) || /Hardware:[^\r\n]*\r?\n/.test(s));
+      if (MINI_RE.test(t)) return true;
+      await io.write("wdusb hello\n");
+      t = await io.read(1000, s => /WD:CAPS [^\r\n]*\r?\n/.test(s));
+      if (/WD:CAPS /.test(t)) { await io.write("wdusb bye\n"); await io.read(200); }
+      return MINI_RE.test(t);
+    });
+  } catch { return false; }
+}
+
 // After a WardriveESP flash: find the port again (native USB re-enumerates on reset), open a USB session with
 // `wdusb hello`, read WD:CAPS, then `wdusb bye` so the board goes straight back to Bluetooth for the app.
-async function verifyWardrive(oldPort, info) {
+// [mini]: a Marauder Mini v3 gets its identity stored again (`board marauder_mini_v3`) and a reboot, so its screen starts.
+async function verifyWardrive(oldPort, info, mini = false) {
   const until = Date.now() + 15000;
   while (Date.now() < until) {
     let port = null;
@@ -611,6 +632,14 @@ async function verifyWardrive(oldPort, info) {
           for (let i = 0; i < 10; i++) {
             await io.write("wdusb hello\n");
             const c = capsOf(await io.read(1000, s => /WD:CAPS [^\r\n]*\r?\n/.test(s)));
+            if (c && mini && c.board !== "marauder_mini_v3") {
+              await io.write("board marauder_mini_v3\n");
+              const ok = /marauder_mini_v3 stored/.test(await io.read(2000, s => /marauder_mini_v3 stored/.test(s)));
+              await io.write("reboot\n");
+              await io.read(200);
+              if (ok) { c.board = "marauder_mini_v3"; c.board_name = "Marauder_Mini_v3"; c.mini_set = "1"; }
+              return c;
+            }
             if (c) { await io.write("wdusb bye\n"); await io.read(200); return c; }
           }
           return null;
@@ -704,6 +733,8 @@ async function runChip(port, mode, strict = false) {
         return { kind: "canceled" };
       }
     }
+    const mini = mode === "any" && await isMiniV3(port, heard);
+    if (mini) line("Marauder Mini v3: its board identity is stored again after the flash, so the screen keeps working.", "hi");
     if (nativeUsb) await c5Gap();
     state("connecting", "busy");
     line("Connecting…", "hi");
@@ -736,7 +767,9 @@ async function runChip(port, mode, strict = false) {
     line(`Flashed WardriveESP${latest ? " " + latest : ""}. The board is restarting.`, "ok");
 
     state("checking", "busy");
-    const caps = await verifyWardrive(port, info);
+    const caps = await verifyWardrive(port, info, mini);
+    if (caps && caps.mini_set) line("Marauder Mini v3 identity stored. The board is restarting with its screen on.", "ok");
+    else if (mini && !(caps && caps.board === "marauder_mini_v3")) line("Couldn't store the Mini v3 identity. In Wardrive Go, open the board's Terminal and send: board marauder_mini_v3, then reboot.", "err");
     const biscuit = !!(caps && /^biscuit_/.test(caps.board || "")) || BISCUIT_RE.test(heard);
     if (caps) {
       line(`Verified: WardriveESP ${caps.fw || "?"} running on ${caps.chip || chip}${caps.board_name ? ", " + caps.board_name.replace(/_/g, " ") : ""}${caps.batt === "1" ? ", battery gauge on" : ""}${caps.coproc ? ", second radio " + caps.coproc : ""}.`, "ok");
