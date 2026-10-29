@@ -3,6 +3,16 @@
   "date": "2026-10-29",
   "releases": [
     {
+      "version": "1.7.3",
+      "date": "2026-10-29",
+      "notes": [
+        "AWOK Dual C5 support: color screen and GPS on its screen chip (the white port)",
+        "Board screens show alerts in the same color as the app's banner and LEDs",
+        "Other phones now see each board's type, battery, second radio and channels",
+        "A board you let go in the app links to the next phone right away"
+      ]
+    },
+    {
       "version": "1.7.2",
       "date": "2026-10-29",
       "notes": [
