@@ -3,6 +3,13 @@
   "date": "2026-10-30",
   "releases": [
     {
+      "version": "1.7.4",
+      "date": "2026-10-30",
+      "notes": [
+        "Board screens show a live firmware update screen while updating: progress ring, percent and a keep power on reminder"
+      ]
+    },
+    {
       "version": "1.7.3",
       "date": "2026-10-29",
       "notes": [
