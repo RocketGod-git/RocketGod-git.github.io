@@ -3,6 +3,15 @@
   "date": "2026-10-31",
   "releases": [
     {
+      "version": "1.7.5",
+      "date": "2026-10-31",
+      "notes": [
+        "Offline runs: boards with a microSD card and GPS save a run to the card whenever no app is linked, then hand it to the app on the next link",
+        "Board screens show SAVING TO SD while offline and a live transfer screen while sending runs to the phone",
+        "GPS on the Marauder Mini v3 and Koko V8"
+      ]
+    },
+    {
       "version": "1.7.4",
       "date": "2026-10-30",
       "notes": [
