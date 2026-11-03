@@ -3,6 +3,18 @@
   "date": "2026-11-03",
   "releases": [
     {
+      "version": "1.7.6",
+      "date": "2026-11-03",
+      "notes": [
+        "Offline runs copy to the phone much faster and no longer stall when lots of boards are linked",
+        "Runs on the card are offered every time a phone links, even right after power-up",
+        "Offline runs need GPS, and boards without a fix show NO GPS FIX",
+        "Boards keep scanning when capture is short on memory, and capture starts as soon as there's room",
+        "Screens show In Range beside Sent or Saved, bolder small text, runs waiting on the card, and stay at full brightness",
+        "A card can be formatted from the Terminal with sd format yes"
+      ]
+    },
+    {
       "version": "1.7.3",
       "date": "2026-10-29",
       "notes": [
