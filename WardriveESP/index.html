@@ -266,7 +266,7 @@ esptool --chip &lt;chip&gt; -p &lt;PORT&gt; -b 460800 write_flash 0x0 wardrive-b
   <p class="muted" style="margin-top:34px">For help, find RocketGod in the Wardriving channel at <a href="https://discord.gg/thepirates">https://discord.gg/thepirates</a> — "The Pirates' Plunder".</p>
 </main>
 <script type="module">
-const ESPTOOL = "https://cdn.jsdelivr.net/npm/esptool-js@0.7.0/+esm";
+const ESPTOOL = new URL("vendor/esptool-js-0.7.0.js", import.meta.url).href;   // our own copy: no CDN to fail mid-flash
 const BINS = {
   "ESP32-C3": "bins/esp32c3/wardrive-bridge-merged.bin",
   "ESP32-C5": "bins/esp32c5/wardrive-bridge-merged.bin",
