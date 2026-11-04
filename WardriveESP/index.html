@@ -152,6 +152,19 @@
   #log { margin: 0; border: 0; border-radius: 0; max-height: 220px; min-height: 80px; overflow: auto; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
   #log .ok { color: var(--green); } #log .err { color: var(--red); } #log .dim { color: var(--dim); } #log .hi { color: var(--ink); }
   .update-note { margin-top: 12px; font-size: 14px; }
+  /* supported boards: the app's pills (same colors) */
+  .boards { padding: 6px 18px 16px; }
+  .board { display:flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .bname { font-weight: 700; color: var(--head); }
+  .bname a { color: var(--head); text-decoration-color: var(--cyan-dim); }
+  .bnote { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .caps { display:flex; flex-wrap: wrap; gap: 6px; }
+  .boards i { --p: #5DCAA5; font-style: normal; font-size: 11px; letter-spacing: .5px; padding: 2px 9px; border-radius: 20px; white-space: nowrap;
+              color: var(--p); border: 1px solid color-mix(in srgb, var(--p) 55%, transparent); background: color-mix(in srgb, var(--p) 12%, transparent); }
+  .boards i.c5 { --p: #A99CFF; } .boards i.cgps { --p: #FFB03A; } .boards i.csd { --p: #FF6FAE; } .boards i.cscr { --p: #F2D25C; }
+  .legend { display:grid; gap: 8px; padding-top: 14px; font-size: 13px; color: var(--muted); }
+  .legend div { display:grid; grid-template-columns: 78px 1fr; align-items: start; gap: 10px; }
+  .legend i { justify-self: start; }
 
   /* releases */
   .rel { padding: 12px 0; border-top: 1px solid var(--line); }
@@ -241,8 +254,28 @@
       <li>Power the board. In <strong>Wardrive Go</strong> turn the Wi-Fi bridge on — it links by itself.</li>
     </ol>
     <p class="muted update-note">Already on 1.2 or newer? Updates install from Wardrive Go over Bluetooth — the app tells you when one is out. Boards on 1.1.1 or older need this USB flash once.</p>
-    <p class="update-note">Need a board? RocketGod's pick: <a href="https://link.amazon/B043kNYbH" rel="sponsored noopener" target="_blank">Seeed Studio XIAO ESP32-C5</a> — the C5 is the only one that also scans 5 GHz.<br><span class="muted" style="font-size:12px">As an Amazon Associate, RocketGod earns from qualifying purchases.</span></p>
-    <p class="update-note">Also tested and used by RocketGod: <a href="https://rabbit-labs.com/product/rabbit-labs-poltergeist-5ghz-wifi-board/" rel="noopener" target="_blank">Rabbit Labs Poltergeist</a> and <a href="https://lab401.com/r?id=iop7bf" rel="sponsored noopener" target="_blank">Ghost Board</a> — both work perfectly.</p>
+  </div>
+
+  <h2>Supported boards</h2>
+  <div class="card boards">
+    <div class="board"><span class="bname">AWOK Dual C5 <span class="bnote">both chips</span></span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i><i class="cgps">GPS</i><i class="csd">SD</i><i class="cscr">Screen</i></span></div>
+    <div class="board"><span class="bname">Marauder Mini v3</span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i><i class="cgps">GPS</i><i class="csd">SD</i><i class="cscr">Screen</i></span></div>
+    <div class="board"><span class="bname">Koko Marauder V8</span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i><i class="cgps">GPS</i><i class="csd">SD</i><i class="cscr">Screen</i></span></div>
+    <div class="board"><span class="bname"><a href="https://lab401.com/r?id=iop7bf" rel="sponsored noopener" target="_blank">Rabbit Labs Ghost Board</a></span><span class="caps"><i class="c24">2.4 GHz</i><i class="cgps">GPS</i><i class="csd">SD</i></span></div>
+    <div class="board"><span class="bname"><a href="https://rabbit-labs.com/product/rabbit-labs-poltergeist-5ghz-wifi-board/" rel="noopener" target="_blank">Rabbit Labs Poltergeist</a></span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i><i class="cscr">Screen</i></span></div>
+    <div class="board"><span class="bname">Biscuit Crumb</span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i></span></div>
+    <div class="board"><span class="bname">Biscuit Pro / Ultra</span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i></span></div>
+    <div class="board"><span class="bname"><a href="https://link.amazon/B043kNYbH" rel="sponsored noopener" target="_blank">Seeed XIAO ESP32-C5</a> <span class="bnote">RocketGod's pick</span></span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i></span></div>
+    <div class="board"><span class="bname">Any ESP32-C5</span><span class="caps"><i class="c24">2.4 GHz</i><i class="c5">5 GHz</i></span></div>
+    <div class="board"><span class="bname">Any ESP32-C3, C6, S3</span><span class="caps"><i class="c24">2.4 GHz</i></span></div>
+    <div class="legend">
+      <div><i class="c24">2.4 GHz</i>Scans 2.4 GHz Wi-Fi</div>
+      <div><i class="c5">5 GHz</i>Also scans 5 GHz Wi-Fi</div>
+      <div><i class="cgps">GPS</i>Has its own GPS, backs up the phone fix</div>
+      <div><i class="csd">SD</i>Offline runs: keeps scanning to its card when your phone drops, then sends the run to the app by itself</div>
+      <div><i class="cscr">Screen</i>WardriveESP runs its screen</div>
+    </div>
+    <p class="muted" style="margin:12px 0 0;font-size:12px">As an Amazon Associate, RocketGod earns from qualifying purchases.</p>
   </div>
 
   <h2 id="releases-h" hidden>What's new</h2>
