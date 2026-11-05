@@ -3,6 +3,13 @@
   "date": "2026-11-05",
   "releases": [
     {
+      "version": "1.7.7",
+      "date": "2026-11-05",
+      "notes": [
+        "ESP32-S3 boards stay linked on phones that tune the link right after connecting (like OnePlus), instead of dropping about 45 seconds in"
+      ]
+    },
+    {
       "version": "1.7.6",
       "date": "2026-11-03",
       "notes": [
