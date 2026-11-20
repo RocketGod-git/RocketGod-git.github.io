@@ -853,6 +853,10 @@ async function runChip(port, mode, strict = false) {
     await write(s.loader, [{ data, address: 0 }], true);
     state("restarting", "busy");
     await close(true);
+    // A USB-serial bridge (CP210x, CH340): the loader's hard reset can leave the chip in its ROM bootloader, silent until
+    // replugged, so the board identity was never stored (bench 2026-11-20, Koko V8 on a CP2102N). A plain reset with
+    // IO0 released boots the new firmware. Native USB boards restart from the loader's reset.
+    if (!nativeUsb) await plainReset(port);
     line(`Flashed WardriveESP${latest ? " " + latest : ""}. The board is restarting.`, "ok");
 
     state("checking", "busy");
