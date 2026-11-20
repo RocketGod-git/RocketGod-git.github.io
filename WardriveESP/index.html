@@ -69,6 +69,22 @@
   .btn.mag { background: linear-gradient(90deg, #9c1c5c, #6f1444); border-color: var(--mag); color: #ffd9ec; box-shadow: 0 0 18px rgba(255,45,149,.25); }
   .btn.mag:hover:not(:disabled) { background: linear-gradient(90deg, #c0256f, #8d1a57); box-shadow: 0 0 26px rgba(255,45,149,.5); }
   .btn svg { width: 16px; height: 16px; flex: none; }
+  .pick { margin-top: 14px; display: grid; gap: 8px; }
+  .pick .pick-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .pick label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--cyan); }
+  .pick select { flex: 1 1 260px; min-width: 0; background: #070b11; color: inherit; border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; font: inherit; }
+  .pick select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,.2); }
+  .pick .btn { padding: 9px 14px; font-size: 12px; }
+  .pick p { margin: 0; font-size: 13px; }
+  .community .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 12px 0;
+    border-top: 1px solid var(--line); }
+  .community .item:first-of-type { border-top: 0; }
+  .community .item h4 { margin: 0; font-size: 15px; }
+  .community .item .meta { font-size: 12px; color: var(--muted); }
+  .community .item p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
+  .community .warn { border: 1px solid var(--amber); color: var(--amber); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 10px; }
+  @media (max-width: 560px) { .community .item { grid-template-columns: 1fr; } }
   .store { display:flex; gap: 8px; flex-wrap: wrap; align-items:center; margin: 0 0 26px; }
   .pill { display:inline-flex; align-items:center; gap: 6px; border: 1px solid var(--line); border-radius: 30px; padding: 5px 13px; font-size: 12px; letter-spacing: 1px; color: var(--muted); background: #070c12; text-decoration: none; }
   .pill:hover { color: var(--cyan); border-color: var(--cyan-dim); }
@@ -230,6 +246,31 @@
     <div class="row">
       <button id="flash" class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="flash-label">Connect &amp; flash WardriveESP</span></button>
     </div>
+    <div class="pick">
+      <div class="pick-row">
+        <label for="board-pick">Board</label>
+        <select id="board-pick" aria-describedby="board-pick-help">
+          <option value="auto">Auto (recommended)</option>
+          <optgroup label="ESP32-C5">
+            <option value="koko_v8">Koko Marauder V8</option>
+            <option value="marauder_mini_v3">Marauder Mini v3</option>
+            <option value="awok_dual_c5">AWOK Dual C5</option>
+            <option value="waveshare_c5_lcd147">Waveshare ESP32-C5-LCD-1.47</option>
+            <option value="crumb">Biscuit Crumb</option>
+            <option value="poltergeist">Rabbit Labs Poltergeist</option>
+          </optgroup>
+          <optgroup label="ESP32-C6">
+            <option value="ghostboard">Rabbit Labs Ghost Board</option>
+            <option value="waveshare_c6_lcd147">Waveshare ESP32-C6-LCD-1.47</option>
+          </optgroup>
+          <optgroup label="ESP32-S3">
+            <option value="waveshare_s3_touch_lcd35">Waveshare ESP32-S3-Touch-LCD-3.5</option>
+          </optgroup>
+        </select>
+        <button id="set-board" class="btn ghost" type="button">Set board only</button>
+      </div>
+      <p class="muted" id="board-pick-help">Auto finds your board. If the screen stays white, pick your board here.</p>
+    </div>
     <div class="chips" id="chips" hidden></div>
     <div class="result" id="result" hidden>
       <h3><span class="dot" aria-hidden="true"></span><span id="result-title"></span></h3>
@@ -281,6 +322,13 @@
   <h2 id="releases-h" hidden>What's new</h2>
   <div class="card" id="releases" hidden></div>
 
+  <h2>Community firmware</h2>
+  <div class="card community" id="community">
+    <div class="warn">Made by the community for devices WardriveESP doesn't support. Not ours, and not tested by us: flash at your own risk. Flashing erases the board.</div>
+    <div id="community-list"><p class="muted">Loading…</p></div>
+    <p class="muted" style="margin-top:12px">Built firmware for another device? Open a pull request on <a href="https://github.com/RocketGod-git/RocketGod-git.github.io" target="_blank" rel="noopener">RocketGod-git.github.io</a> that adds your merged image (flashed at 0x0) under <code>WardriveESP/community/</code> and an entry in <code>community/community.json</code>: name, author, chip, devices, version, notes and a link to its source.</p>
+  </div>
+
   <h2>Or flash it yourself</h2>
   <div class="card">
     <div class="row">
@@ -319,6 +367,19 @@ const MESH_RE = /SerialBLEInterface|BLE: (?:readBytes|writeBytes|onConnect)|\[Po
 const BISCUIT_RE = /Biscuit[ _](?:Ultra|Pro)|biscuit_(?:ultra|pro|dual)|WROOM BLE Gateway/i;
 // A Marauder Mini v3: Marauder's `info` ("Hardware: Marauder Mini v3") or WardriveESP's CAPS (board=marauder_mini_v3).
 const MINI_RE = /Hardware:\s*Marauder Mini v3|board=marauder_mini_v3/i;
+// Every board WardriveESP supports, by chip: picked here when Auto doesn't find it, stored with `board <id>` after the
+// flash, and used as is without detection (firmware 1.7.10+). Same list as the Android flasher. Biscuits stay automatic.
+const PICKS = {
+  koko_v8: { chip: "ESP32-C5", name: "Koko Marauder V8" },
+  marauder_mini_v3: { chip: "ESP32-C5", name: "Marauder Mini v3" },
+  awok_dual_c5: { chip: "ESP32-C5", name: "AWOK Dual C5" },
+  waveshare_c5_lcd147: { chip: "ESP32-C5", name: "Waveshare ESP32-C5-LCD-1.47" },
+  crumb: { chip: "ESP32-C5", name: "Biscuit Crumb" },
+  poltergeist: { chip: "ESP32-C5", name: "Rabbit Labs Poltergeist" },
+  ghostboard: { chip: "ESP32-C6", name: "Rabbit Labs Ghost Board" },
+  waveshare_c6_lcd147: { chip: "ESP32-C6", name: "Waveshare ESP32-C6-LCD-1.47" },
+  waveshare_s3_touch_lcd35: { chip: "ESP32-S3", name: "Waveshare ESP32-S3-Touch-LCD-3.5" },
+};
 const CHIP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></svg>';
 const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
 
@@ -647,8 +708,9 @@ async function isMiniV3(port, heard) {
 
 // After a WardriveESP flash: find the port again (native USB re-enumerates on reset), open a USB session with
 // `wdusb hello`, read WD:CAPS, then `wdusb bye` so the board goes straight back to Bluetooth for the app.
-// [mini]: a Marauder Mini v3 gets its identity stored again (`board marauder_mini_v3`) and a reboot, so its screen starts.
-async function verifyWardrive(oldPort, info, mini = false) {
+// [board]: a board picked (or a Mini found before the erase) gets its identity stored (`board <id>`) and a reboot, so
+// its screen starts.
+async function verifyWardrive(oldPort, info, board = null) {
   const until = Date.now() + 15000;
   while (Date.now() < until) {
     let port = null;
@@ -665,12 +727,13 @@ async function verifyWardrive(oldPort, info, mini = false) {
           for (let i = 0; i < 10; i++) {
             await io.write("wdusb hello\n");
             const c = capsOf(await io.read(1000, s => /WD:CAPS [^\r\n]*\r?\n/.test(s)));
-            if (c && mini && c.board !== "marauder_mini_v3") {
-              await io.write("board marauder_mini_v3\n");
-              const ok = /marauder_mini_v3 stored/.test(await io.read(2000, s => /marauder_mini_v3 stored/.test(s)));
+            if (c && board && c.board !== board) {
+              const done = new RegExp(board + " stored");
+              await io.write(`board ${board}\n`);
+              const ok = done.test(await io.read(2000, s => done.test(s)));
               await io.write("reboot\n");
               await io.read(200);
-              if (ok) { c.board = "marauder_mini_v3"; c.board_name = "Marauder_Mini_v3"; c.mini_set = "1"; }
+              if (ok) { c.board = board; c.board_name = PICKS[board] ? PICKS[board].name.replace(/ /g, "_") : board; c.board_set = "1"; }
               return c;
             }
             if (c) { await io.write("wdusb bye\n"); await io.read(200); return c; }
@@ -766,7 +829,8 @@ async function runChip(port, mode, strict = false) {
         return { kind: "canceled" };
       }
     }
-    const mini = mode === "any" && await isMiniV3(port, heard);
+    let pick = mode === "any" ? boardPick() : null;
+    const mini = mode === "any" && !pick && await isMiniV3(port, heard);
     if (mini) line("Marauder Mini v3: its board identity is stored again after the flash, so the screen keeps working.", "hi");
     if (nativeUsb) await c5Gap();
     state("connecting", "busy");
@@ -785,6 +849,11 @@ async function runChip(port, mode, strict = false) {
     if (mode === "coproc") throw new Error(`Expected the Biscuit's ESP32, found ${chip}. Pick the USB-SERIAL CH340 port.`);
     if (mode === "c5" && chip !== "ESP32-C5") throw new Error(`Expected the Biscuit's ESP32-C5, found ${chip}.`);
     if (!BINS[chip]) throw new Error(`${chip} isn't supported. WardriveESP runs on ESP32-C3, C5, C6 and S3.`);
+    if (pick && PICKS[pick].chip !== chip) {
+      line(`${PICKS[pick].name} runs on an ${PICKS[pick].chip}, but this board is an ${chip}. Flashing with Auto instead.`, "err");
+      pick = null;
+    }
+    if (pick) line(`${PICKS[pick].name}: stored as this board's identity after the flash.`, "hi");
     await checkSecurity(s.loader);
 
     state("downloading", "busy");
@@ -797,12 +866,17 @@ async function runChip(port, mode, strict = false) {
     await write(s.loader, [{ data, address: 0 }], true);
     state("restarting", "busy");
     await close(true);
+    // A USB-serial bridge (CP210x, CH340): the loader's hard reset can leave the chip in its ROM bootloader, silent until
+    // replugged, so the board identity was never stored (bench 2026-11-20, Koko V8 on a CP2102N). A plain reset with
+    // IO0 released boots the new firmware. Native USB boards restart from the loader's reset.
+    if (!nativeUsb) await plainReset(port);
     line(`Flashed WardriveESP${latest ? " " + latest : ""}. The board is restarting.`, "ok");
 
     state("checking", "busy");
-    const caps = await verifyWardrive(port, info, mini);
-    if (caps && caps.mini_set) line("Marauder Mini v3 identity stored. The board is restarting with its screen on.", "ok");
-    else if (mini && !(caps && caps.board === "marauder_mini_v3")) line("Couldn't store the Mini v3 identity. In Wardrive Go, open the board's Terminal and send: board marauder_mini_v3, then reboot.", "err");
+    const want = pick || (mini ? "marauder_mini_v3" : null);
+    const caps = await verifyWardrive(port, info, want);
+    if (caps && caps.board_set) line(`${PICKS[want].name} identity stored. The board is restarting with its screen on.`, "ok");
+    else if (want && !(caps && caps.board === want)) line(`Couldn't store the ${PICKS[want].name} identity. Use Set board only, or in Wardrive Go open the board's Terminal and send: board ${want}, then reboot.`, "err");
     const biscuit = !!(caps && /^biscuit_/.test(caps.board || "")) || BISCUIT_RE.test(heard);
     if (caps) {
       line(`Verified: WardriveESP ${caps.fw || "?"} running on ${caps.chip || chip}${caps.board_name ? ", " + caps.board_name.replace(/_/g, " ") : ""}${caps.batt === "1" ? ", battery gauge on" : ""}${caps.coproc ? ", second radio " + caps.coproc : ""}.`, "ok");
@@ -1142,6 +1216,113 @@ if (!("serial" in navigator)) {
   navigator.serial.addEventListener("connect", () => renderQuick());
   navigator.serial.addEventListener("disconnect", () => renderQuick());
 }
+
+// ---- Community firmware (community/community.json): listed apart from ours, flashed whole at 0x0 ----
+const CHIPS = { "ESP32": 1, "ESP32-C3": 1, "ESP32-C5": 1, "ESP32-C6": 1, "ESP32-S3": 1 };
+const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function loadCommunity() {
+  const box = $("community-list");
+  let list = [];
+  try {
+    const r = await fetch(`community/community.json?t=${Date.now()}`, { cache: "no-store" });
+    if (r.ok) list = (await r.json()).firmware || [];
+  } catch {}
+  list = list.filter(f => f && f.name && f.bin && CHIPS[f.chip] && /^[A-Za-z0-9._-]+\.bin$/.test(f.bin));
+  if (!list.length) { box.innerHTML = '<p class="muted">Nothing here yet.</p>'; return; }
+  box.innerHTML = "";
+  list.forEach((f, i) => {
+    const el = document.createElement("div");
+    el.className = "item";
+    const src = /^https:\/\//.test(f.source || "") ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">source</a>` : "";
+    el.innerHTML = `<div><h4>${esc(f.name)}${f.version ? " " + esc(f.version) : ""}</h4>
+      <div class="meta">${esc(f.chip)}${f.devices ? " · " + esc(f.devices) : ""}${f.author ? " · by " + esc(f.author) : ""}${src}</div></div>
+      <button class="btn ghost" type="button">Flash</button>${f.notes ? `<p>${esc(f.notes)}</p>` : ""}`;
+    el.querySelector("button").addEventListener("click", () => flashCommunity(f));
+    box.appendChild(el);
+  });
+}
+async function flashCommunity(f) {
+  if (busy) return;
+  if (!confirm(`${f.name} is community firmware, not made or tested by us.\n\nFlashing erases the board. Flash it?`)) return;
+  let port;
+  try { port = await navigator.serial.requestPort(); }
+  catch { line("No port selected."); return; }
+  setBusy(true);
+  progress(0);
+  let sess = null;
+  try {
+    state("connecting", "busy");
+    sess = await connect(port, true);
+    const chip = sess.loader.chip.CHIP_NAME;
+    line(`Detected ${sess.desc}`, "ok");
+    if (chip !== f.chip) throw new Error(`${f.name} is for an ${f.chip}, but this board is an ${chip}.`);
+    await checkSecurity(sess.loader);
+    state("downloading", "busy");
+    const data = await download(`community/${f.bin}`, f.version || "", 16 * 1024 * 1024);
+    // A merged image starts with the bootloader: at 0x0, 0x1000 (classic ESP32) or 0x2000 (C5).
+    if (data.length < 0x8000 || ![0, 0x1000, 0x2000].some(at => data[at] === 0xE9))
+      throw new Error("The download isn't a firmware image.");
+    line(`Downloaded ${f.name} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
+    state("erasing + flashing", "busy");
+    await write(sess.loader, [{ data, address: 0 }], true);
+    try { await sess.loader.after("hard_reset", false); } catch {}
+    line(`Flashed ${f.name}. The board is restarting.`, "ok");
+    state("done", "ok");
+  } catch (e) {
+    line(`Failed: ${e && e.message ? e.message : e}`, "err");
+    state("failed", "err");
+  } finally {
+    if (sess) { try { await sess.transport.disconnect(); } catch {} }
+    setBusy(false);
+  }
+}
+loadCommunity();
+
+// The board picker: remembered in this browser.
+const pickEl = $("board-pick");
+try { const v = localStorage.getItem("wd_board_pick"); if (v && (v === "auto" || PICKS[v])) pickEl.value = v; } catch {}
+pickEl.addEventListener("change", () => { try { localStorage.setItem("wd_board_pick", pickEl.value); } catch {} });
+function boardPick() { return PICKS[pickEl.value] ? pickEl.value : null; }
+
+// Set board only: a board that already runs WardriveESP gets the picked identity (or Auto) and restarts. No flash.
+$("set-board").addEventListener("click", async () => {
+  if (busy) return;
+  const want = pickEl.value;
+  let port;
+  try { port = await navigator.serial.requestPort(); }
+  catch { line("No port selected."); return; }
+  setBusy(true);
+  state("setting board", "busy");
+  try {
+    const r = await serial(port, async io => {
+      await io.quiet();
+      // The console takes `board` only inside a USB session (bench 2026-11-20: no reply without `wdusb hello`).
+      let caps = null;
+      for (let i = 0; i < 5 && !caps; i++) {
+        await io.write("wdusb hello\n");
+        caps = capsOf(await io.read(1000, s => /WD:CAPS [^\r\n]*\r?\n/.test(s)));
+      }
+      if (!caps) return false;
+      await io.write(`board ${want}\n`);
+      const done = new RegExp(`board ${want} stored`);
+      const t = await io.read(3000, s => done.test(s));
+      if (!done.test(t)) return false;
+      await io.write("reboot\r\n");
+      await io.read(300);
+      return true;
+    });
+    if (r) {
+      line(want === "auto" ? "Board set to Auto. It's restarting and finds itself from its hardware." : `Board set to ${PICKS[want].name}. It's restarting with its screen on.`, "ok");
+      state("done", "ok");
+    } else {
+      line("The board didn't answer. If it isn't running WardriveESP yet, flash it with the board picked above instead.", "err");
+      state("failed", "err");
+    }
+  } catch (e) {
+    line(`Couldn't talk to the board (${e.message}). Close any other app using the port and try again.`, "err");
+    state("failed", "err");
+  } finally { setBusy(false); }
+});
 
 btn.addEventListener("click", async () => {
   if (busy) return;
