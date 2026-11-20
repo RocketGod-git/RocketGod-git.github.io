@@ -252,17 +252,24 @@
         <select id="board-pick" aria-describedby="board-pick-help">
           <option value="auto">Auto (recommended)</option>
           <optgroup label="ESP32-C5">
+            <option value="koko_v8">Koko Marauder V8</option>
             <option value="marauder_mini_v3">Marauder Mini v3</option>
+            <option value="awok_dual_c5">AWOK Dual C5</option>
             <option value="waveshare_c5_lcd147">Waveshare ESP32-C5-LCD-1.47</option>
+            <option value="crumb">Biscuit Crumb</option>
+            <option value="poltergeist">Rabbit Labs Poltergeist</option>
           </optgroup>
           <optgroup label="ESP32-C6">
             <option value="ghostboard">Rabbit Labs Ghost Board</option>
             <option value="waveshare_c6_lcd147">Waveshare ESP32-C6-LCD-1.47</option>
           </optgroup>
+          <optgroup label="ESP32-S3">
+            <option value="waveshare_s3_touch_lcd35">Waveshare ESP32-S3-Touch-LCD-3.5</option>
+          </optgroup>
         </select>
         <button id="set-board" class="btn ghost" type="button">Set board only</button>
       </div>
-      <p class="muted" id="board-pick-help">Auto finds your board from its hardware. If the screen stays white after flashing, pick your board here and flash again, or use Set board only on a board that already runs WardriveESP. Every other supported board is always found by itself.</p>
+      <p class="muted" id="board-pick-help">Auto finds your board from its hardware. If it doesn't (a white screen after flashing), pick your board here and flash again, or use Set board only on a board that already runs WardriveESP. A board picked here is used as is, without detection.</p>
     </div>
     <div class="chips" id="chips" hidden></div>
     <div class="result" id="result" hidden>
@@ -360,12 +367,18 @@ const MESH_RE = /SerialBLEInterface|BLE: (?:readBytes|writeBytes|onConnect)|\[Po
 const BISCUIT_RE = /Biscuit[ _](?:Ultra|Pro)|biscuit_(?:ultra|pro|dual)|WROOM BLE Gateway/i;
 // A Marauder Mini v3: Marauder's `info` ("Hardware: Marauder Mini v3") or WardriveESP's CAPS (board=marauder_mini_v3).
 const MINI_RE = /Hardware:\s*Marauder Mini v3|board=marauder_mini_v3/i;
-// Boards WardriveESP can't always tell from their hardware: picked here, stored with `board <id>` after the flash.
+// Every board WardriveESP supports, by chip: picked here when Auto doesn't find it, stored with `board <id>` after the
+// flash, and used as is without detection (firmware 1.7.10+). Same list as the Android flasher. Biscuits stay automatic.
 const PICKS = {
+  koko_v8: { chip: "ESP32-C5", name: "Koko Marauder V8" },
   marauder_mini_v3: { chip: "ESP32-C5", name: "Marauder Mini v3" },
+  awok_dual_c5: { chip: "ESP32-C5", name: "AWOK Dual C5" },
   waveshare_c5_lcd147: { chip: "ESP32-C5", name: "Waveshare ESP32-C5-LCD-1.47" },
+  crumb: { chip: "ESP32-C5", name: "Biscuit Crumb" },
+  poltergeist: { chip: "ESP32-C5", name: "Rabbit Labs Poltergeist" },
   ghostboard: { chip: "ESP32-C6", name: "Rabbit Labs Ghost Board" },
   waveshare_c6_lcd147: { chip: "ESP32-C6", name: "Waveshare ESP32-C6-LCD-1.47" },
+  waveshare_s3_touch_lcd35: { chip: "ESP32-S3", name: "Waveshare ESP32-S3-Touch-LCD-3.5" },
 };
 const CHIP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></svg>';
 const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
