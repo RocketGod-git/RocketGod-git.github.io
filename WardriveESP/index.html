@@ -1279,7 +1279,14 @@ $("set-board").addEventListener("click", async () => {
   try {
     const r = await serial(port, async io => {
       await io.quiet();
-      await io.write(`\r\nboard ${want}\r\n`);
+      // The console takes `board` only inside a USB session (bench 2026-11-20: no reply without `wdusb hello`).
+      let caps = null;
+      for (let i = 0; i < 5 && !caps; i++) {
+        await io.write("wdusb hello\n");
+        caps = capsOf(await io.read(1000, s => /WD:CAPS [^\r\n]*\r?\n/.test(s)));
+      }
+      if (!caps) return false;
+      await io.write(`board ${want}\n`);
       const done = new RegExp(`board ${want} stored`);
       const t = await io.read(3000, s => done.test(s));
       if (!done.test(t)) return false;
