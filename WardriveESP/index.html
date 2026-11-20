@@ -71,27 +71,37 @@
   .btn svg { width: 16px; height: 16px; flex: none; }
   .pick { margin-top: 14px; display: grid; gap: 8px; }
   .pick .pick-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .pick label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--cyan); }
+  .pick label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--mag); }
   .pick select { flex: 1 1 260px; min-width: 0; background: #070b11; color: inherit; border: 1px solid var(--line);
     border-radius: 8px; padding: 10px 12px; font: inherit; }
   .pick select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,.2); }
+  /* Our boards: the pink highlight. */
+  #board-pick { border-color: var(--mag); box-shadow: 0 0 14px rgba(255,45,149,.18); }
+  #board-pick:focus { border-color: var(--mag); box-shadow: 0 0 0 2px rgba(255,45,149,.3); }
+  #set-board { color: var(--mag); border-color: var(--mag); }
+  #set-board:hover:not(:disabled) { background: rgba(255,45,149,.1); }
   .pick .btn { padding: 9px 14px; font-size: 12px; }
   .pick p { margin: 0; font-size: 13px; }
   .comm { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); display: grid; gap: 10px; }
-  .comm .ask { font-size: 14px; }
-  .comm .ask b { color: var(--mag); }
-  .comm-card { border: 1px solid var(--mag); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px;
-    background: linear-gradient(180deg, rgba(255,45,149,.07), rgba(255,45,149,.02)); }
+  /* Community firmware: quiet next to ours. */
+  .comm .ask { font-size: 13px; letter-spacing: 1px; color: var(--muted); }
+  .comm .ask b { color: var(--muted); font-weight: 700; }
+  .comm select { color: var(--muted); }
+  .comm-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px;
+    background: rgba(255,255,255,.02); color: var(--muted); }
+  .comm-card h4 { color: inherit; }
+  .comm a { color: var(--muted); }
   .comm-card h4 { margin: 0; font-size: 16px; }
   .comm-card h4 .ver { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
   .comm-card .by { font-size: 12px; color: var(--muted); }
   .comm-card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .comm-card .tag { font-size: 11px; letter-spacing: 1px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--muted); }
-  .comm-card .tag.chip { border-color: var(--cyan-dim); color: var(--cyan); }
+  .comm-card .tag.chip { color: inherit; }
   .comm-card p { margin: 0; font-size: 13px; }
-  .comm-card .note { color: var(--amber); }
+  .comm-card .note { color: inherit; font-style: italic; }
   .comm-card .links { font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
-  .comm-card .who { font-size: 12px; color: var(--mag); letter-spacing: .5px; }
+  .comm-card .who { font-size: 11px; color: var(--muted); letter-spacing: 1px; opacity: .8; }
+  .comm-card .btn { color: var(--muted); border-color: var(--line); }
   .comm-card .btn { justify-self: start; }
   .comm .add { font-size: 12px; }
   .store { display:flex; gap: 8px; flex-wrap: wrap; align-items:center; margin: 0 0 26px; }
@@ -1268,7 +1278,7 @@ function showCommunity() {
     <p>${esc(f.description)}</p>
     ${f.notes ? `<p class="note">${esc(f.notes)}</p>` : ""}
     <div class="links">${link(f.source, "Source code")}${link(f.website, "Project page")}</div>
-    <button class="btn mag" type="button" id="comm-flash">Flash ${esc(f.name)}</button>`;
+    <button class="btn ghost" type="button" id="comm-flash">Flash ${esc(f.name)}</button>`;
   commCard.hidden = false;
   $("comm-flash").addEventListener("click", () => flashCommunity(f));
 }
