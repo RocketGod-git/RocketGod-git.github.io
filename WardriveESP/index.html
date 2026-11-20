@@ -77,14 +77,23 @@
   .pick select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,.2); }
   .pick .btn { padding: 9px 14px; font-size: 12px; }
   .pick p { margin: 0; font-size: 13px; }
-  .community .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 12px 0;
-    border-top: 1px solid var(--line); }
-  .community .item:first-of-type { border-top: 0; }
-  .community .item h4 { margin: 0; font-size: 15px; }
-  .community .item .meta { font-size: 12px; color: var(--muted); }
-  .community .item p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
-  .community .warn { border: 1px solid var(--amber); color: var(--amber); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 10px; }
-  @media (max-width: 560px) { .community .item { grid-template-columns: 1fr; } }
+  .comm { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); display: grid; gap: 10px; }
+  .comm .ask { font-size: 14px; }
+  .comm .ask b { color: var(--mag); }
+  .comm-card { border: 1px solid var(--mag); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px;
+    background: linear-gradient(180deg, rgba(255,45,149,.07), rgba(255,45,149,.02)); }
+  .comm-card h4 { margin: 0; font-size: 16px; }
+  .comm-card h4 .ver { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  .comm-card .by { font-size: 12px; color: var(--muted); }
+  .comm-card .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .comm-card .tag { font-size: 11px; letter-spacing: 1px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--muted); }
+  .comm-card .tag.chip { border-color: var(--cyan-dim); color: var(--cyan); }
+  .comm-card p { margin: 0; font-size: 13px; }
+  .comm-card .note { color: var(--amber); }
+  .comm-card .links { font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .comm-card .who { font-size: 12px; color: var(--mag); letter-spacing: .5px; }
+  .comm-card .btn { justify-self: start; }
+  .comm .add { font-size: 12px; }
   .store { display:flex; gap: 8px; flex-wrap: wrap; align-items:center; margin: 0 0 26px; }
   .pill { display:inline-flex; align-items:center; gap: 6px; border: 1px solid var(--line); border-radius: 30px; padding: 5px 13px; font-size: 12px; letter-spacing: 1px; color: var(--muted); background: #070c12; text-decoration: none; }
   .pill:hover { color: var(--cyan); border-color: var(--cyan-dim); }
@@ -270,6 +279,16 @@
         <button id="set-board" class="btn ghost" type="button">Set board only</button>
       </div>
       <p class="muted" id="board-pick-help">Auto finds your board. If the screen stays white, pick your board here.</p>
+      <div class="comm" id="community">
+        <div class="pick-row">
+          <label for="comm-pick" class="ask"><b>Don't see your board?</b> Try community firmware</label>
+        </div>
+        <div class="pick-row">
+          <select id="comm-pick" aria-describedby="comm-help"><option value="">Loading community firmware…</option></select>
+        </div>
+        <div class="comm-card" id="comm-card" hidden></div>
+        <p class="muted add" id="comm-help">Made by the community for boards WardriveESP doesn't support. <a href="https://github.com/RocketGod-git/wardriveesp-community#submit-your-firmware" target="_blank" rel="noopener">Add your firmware</a></p>
+      </div>
     </div>
     <div class="chips" id="chips" hidden></div>
     <div class="result" id="result" hidden>
@@ -321,13 +340,6 @@
 
   <h2 id="releases-h" hidden>What's new</h2>
   <div class="card" id="releases" hidden></div>
-
-  <h2>Community firmware</h2>
-  <div class="card community" id="community">
-    <div class="warn">Made by the community for devices WardriveESP doesn't support. Not ours, and not tested by us: flash at your own risk. Flashing erases the board.</div>
-    <div id="community-list"><p class="muted">Loading…</p></div>
-    <p class="muted" style="margin-top:12px">Built firmware for another device? Open a pull request on <a href="https://github.com/RocketGod-git/RocketGod-git.github.io" target="_blank" rel="noopener">RocketGod-git.github.io</a> that adds your merged image (flashed at 0x0) under <code>WardriveESP/community/</code> and an entry in <code>community/community.json</code>: name, author, chip, devices, version, notes and a link to its source.</p>
-  </div>
 
   <h2>Or flash it yourself</h2>
   <div class="card">
@@ -1217,59 +1229,93 @@ if (!("serial" in navigator)) {
   navigator.serial.addEventListener("disconnect", () => renderQuick());
 }
 
-// ---- Community firmware (community/community.json): listed apart from ours, flashed whole at 0x0 ----
+// ---- Community firmware: rocketgod.dev/wardriveesp-community (its repo checks every image before it's listed) ----
+// Picked by hand only (no detection): the chip must match, the download must match the listed SHA-256, then the image
+// is written whole at 0x0 like ours.
+const COMMUNITY = "../wardriveesp-community/";
 const CHIPS = { "ESP32": 1, "ESP32-C3": 1, "ESP32-C5": 1, "ESP32-C6": 1, "ESP32-S3": 1 };
 const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const commPick = $("comm-pick"), commCard = $("comm-card");
+let community = [];
 async function loadCommunity() {
-  const box = $("community-list");
-  let list = [];
   try {
-    const r = await fetch(`community/community.json?t=${Date.now()}`, { cache: "no-store" });
-    if (r.ok) list = (await r.json()).firmware || [];
+    const r = await fetch(`${COMMUNITY}index.json?t=${Date.now()}`, { cache: "no-store" });
+    if (r.ok) community = ((await r.json()).firmware || []).filter(f => f && f.id && f.name && CHIPS[f.chip] &&
+      /^firmware\/[a-z0-9-]+\/firmware\.bin$/.test(f.bin || "") && /^[0-9a-f]{64}$/.test(f.sha256 || ""));
   } catch {}
-  list = list.filter(f => f && f.name && f.bin && CHIPS[f.chip] && /^[A-Za-z0-9._-]+\.bin$/.test(f.bin));
-  if (!list.length) { box.innerHTML = '<p class="muted">Nothing here yet.</p>'; return; }
-  box.innerHTML = "";
-  list.forEach((f, i) => {
-    const el = document.createElement("div");
-    el.className = "item";
-    const src = /^https:\/\//.test(f.source || "") ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">source</a>` : "";
-    el.innerHTML = `<div><h4>${esc(f.name)}${f.version ? " " + esc(f.version) : ""}</h4>
-      <div class="meta">${esc(f.chip)}${f.devices ? " · " + esc(f.devices) : ""}${f.author ? " · by " + esc(f.author) : ""}${src}</div></div>
-      <button class="btn ghost" type="button">Flash</button>${f.notes ? `<p>${esc(f.notes)}</p>` : ""}`;
-    el.querySelector("button").addEventListener("click", () => flashCommunity(f));
-    box.appendChild(el);
-  });
+  if (!community.length) {
+    commPick.innerHTML = '<option value="">None yet. Be the first to add one.</option>';
+    commPick.disabled = true;
+    return;
+  }
+  const by = {};
+  community.forEach(f => (by[f.chip] = by[f.chip] || []).push(f));
+  commPick.innerHTML = `<option value="">Pick community firmware (${community.length})…</option>` +
+    Object.keys(by).sort().map(chip => `<optgroup label="${esc(chip)}">` +
+      by[chip].map(f => `<option value="${esc(f.id)}">${esc(f.name)} · ${esc((f.boards || []).join(", "))}</option>`).join("") +
+      "</optgroup>").join("");
+  if (location.hash === "#community") $("community").scrollIntoView({ block: "center" });
+}
+function showCommunity() {
+  const f = community.find(x => x.id === commPick.value);
+  if (!f) { commCard.hidden = true; commCard.innerHTML = ""; return; }
+  const link = (u, t) => /^https:\/\//.test(u || "") ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : "";
+  commCard.innerHTML = `
+    <div class="who">COMMUNITY FIRMWARE · NOT MADE BY THE WARDRIVEESP TEAM</div>
+    <h4>${esc(f.name)}<span class="ver">${esc(f.version)}</span></h4>
+    <div class="by">by ${esc(f.author)} · ${esc(f.license)} · ${(f.size / 1024).toFixed(0)} KB</div>
+    <div class="tags"><span class="tag chip">${esc(f.chip)}</span>${(f.boards || []).map(b => `<span class="tag">${esc(b)}</span>`).join("")}</div>
+    <p>${esc(f.description)}</p>
+    ${f.notes ? `<p class="note">${esc(f.notes)}</p>` : ""}
+    <div class="links">${link(f.source, "Source code")}${link(f.website, "Project page")}</div>
+    <button class="btn mag" type="button" id="comm-flash">Flash ${esc(f.name)}</button>`;
+  commCard.hidden = false;
+  $("comm-flash").addEventListener("click", () => flashCommunity(f));
+}
+commPick.addEventListener("change", showCommunity);
+async function sha256hex(bytes) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return Array.from(h, b => b.toString(16).padStart(2, "0")).join("");
 }
 async function flashCommunity(f) {
   if (busy) return;
-  if (!confirm(`${f.name} is community firmware, not made or tested by us.\n\nFlashing erases the board. Flash it?`)) return;
+  if (!confirm(`${f.name} by ${f.author} is community firmware, not made by the WardriveESP team.\n\nFlashing erases the board and replaces WardriveESP. Flash it?`)) return;
   let port;
   try { port = await navigator.serial.requestPort(); }
   catch { line("No port selected."); return; }
+  const info = port.getInfo ? port.getInfo() : {};
+  const nativeUsb = info.usbVendorId === USB_JTAG.usbVendorId && info.usbProductId === USB_JTAG.usbProductId;
   setBusy(true);
   progress(0);
-  let sess = null;
+  let sess = null, wrote = false;
   try {
+    state("downloading", "busy");
+    line(`Downloading ${f.name} ${f.version}…`, "hi");
+    const res = await fetch(`${COMMUNITY}${f.bin}?v=${encodeURIComponent(f.sha256)}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Download failed (HTTP ${res.status}). Try again.`);
+    const data = new Uint8Array(await res.arrayBuffer());
+    if (data.length !== f.size || await sha256hex(data) !== f.sha256) throw new Error("The download doesn't match the listed image. Try again.");
+    line(`Downloaded and checked (${(data.length / 1024).toFixed(0)} KB, SHA-256 matches).`, "ok");
     state("connecting", "busy");
     sess = await connect(port, true);
     const chip = sess.loader.chip.CHIP_NAME;
     line(`Detected ${sess.desc}`, "ok");
-    if (chip !== f.chip) throw new Error(`${f.name} is for an ${f.chip}, but this board is an ${chip}.`);
+    if (chip !== f.chip) throw new Error(`${f.name} is for an ${f.chip}, but this board is an ${chip}. Nothing was written.`);
     await checkSecurity(sess.loader);
-    state("downloading", "busy");
-    const data = await download(`community/${f.bin}`, f.version || "", 16 * 1024 * 1024);
-    // A merged image starts with the bootloader: at 0x0, 0x1000 (classic ESP32) or 0x2000 (C5).
-    if (data.length < 0x8000 || ![0, 0x1000, 0x2000].some(at => data[at] === 0xE9))
-      throw new Error("The download isn't a firmware image.");
-    line(`Downloaded ${f.name} (${(data.length / 1024).toFixed(0)} KB).`, "hi");
     state("erasing + flashing", "busy");
+    line("Erasing and flashing. Keep the board plugged in…", "hi");
+    wrote = true;
     await write(sess.loader, [{ data, address: 0 }], true);
-    try { await sess.loader.after("hard_reset", false); } catch {}
-    line(`Flashed ${f.name}. The board is restarting.`, "ok");
+    try { await sess.loader.after("hard_reset", nativeUsb); } catch {}
+    try { await sess.transport.disconnect(); } catch {}
+    sess = null;
+    if (!nativeUsb) await plainReset(port);   // a USB-serial bridge can leave the chip in its bootloader (see runChip)
+    line(`Flashed ${f.name} ${f.version}. The board is restarting into it.`, "ok");
+    line("Questions about it go to its author. To come back to WardriveESP, flash it with the button above.", "hi");
     state("done", "ok");
   } catch (e) {
     line(`Failed: ${e && e.message ? e.message : e}`, "err");
+    if (!wrote) line("Nothing was written. The board still runs its old firmware.", "hi");
     state("failed", "err");
   } finally {
     if (sess) { try { await sess.transport.disconnect(); } catch {} }
