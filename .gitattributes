@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Firmware images and zips are never text (the C5 image starts with 8 KB of 0xFF, which looks like text)
+*.bin binary
+*.zip binary

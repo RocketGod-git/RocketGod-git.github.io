@@ -3,6 +3,15 @@
   "date": "2026-11-20",
   "releases": [
     {
+      "version": "1.7.9",
+      "date": "2026-11-20",
+      "notes": [
+        "Runs on the card copy to the phone several times faster: the board sends them compressed in one go (needs the latest Wardrive Go)",
+        "Fixed copies losing a few pieces every so often and stalling for several seconds",
+        "The board's console no longer slows down Bluetooth transfers"
+      ]
+    },
+    {
       "version": "1.7.7",
       "date": "2026-11-05",
       "notes": [
