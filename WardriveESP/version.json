@@ -3,6 +3,13 @@
   "date": "2026-11-20",
   "releases": [
     {
+      "version": "1.7.10",
+      "date": "2026-11-20",
+      "notes": [
+        "A board you pick by hand is used as is, so its screen works even when Auto doesn't recognize it"
+      ]
+    },
+    {
       "version": "1.7.9",
       "date": "2026-11-20",
       "notes": [
