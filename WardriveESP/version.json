@@ -3,6 +3,13 @@
   "date": "2026-11-20",
   "releases": [
     {
+      "version": "1.7.11",
+      "date": "2026-11-20",
+      "notes": [
+        "New \"lcd mode\" command for Marauder Mini v3 boards whose screen stays white"
+      ]
+    },
+    {
       "version": "1.7.10",
       "date": "2026-11-20",
       "notes": [
