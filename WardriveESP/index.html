@@ -1262,7 +1262,8 @@ async function loadCommunity() {
   community.forEach(f => (by[f.chip] = by[f.chip] || []).push(f));
   commPick.innerHTML = `<option value="">Pick community firmware (${community.length})…</option>` +
     Object.keys(by).sort().map(chip => `<optgroup label="${esc(chip)}">` +
-      by[chip].map(f => `<option value="${esc(f.id)}">${esc(f.name)} · ${esc((f.boards || []).join(", "))}</option>`).join("") +
+      by[chip].map(f => { const extra = (f.boards || []).filter(b => !f.name.toLowerCase().includes(String(b).toLowerCase()));
+        return `<option value="${esc(f.id)}">${esc(f.name)}${extra.length ? ` · ${esc(extra.join(", "))}` : ""}</option>`; }).join("") +
       "</optgroup>").join("");
   if (location.hash === "#community") $("community").scrollIntoView({ block: "center" });
 }
