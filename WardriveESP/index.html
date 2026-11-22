@@ -69,10 +69,10 @@
   .btn.mag { background: linear-gradient(90deg, #9c1c5c, #6f1444); border-color: var(--mag); color: #ffd9ec; box-shadow: 0 0 18px rgba(255,45,149,.25); }
   .btn.mag:hover:not(:disabled) { background: linear-gradient(90deg, #c0256f, #8d1a57); box-shadow: 0 0 26px rgba(255,45,149,.5); }
   .btn svg { width: 16px; height: 16px; flex: none; }
-  .pick { margin-top: 14px; display: grid; gap: 8px; }
+  .pick { margin-top: 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .pick .pick-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .pick label { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--mag); }
-  .pick select { flex: 1 1 260px; min-width: 0; background: #070b11; color: inherit; border: 1px solid var(--line);
+  .pick select { flex: 1 1 260px; min-width: 0; max-width: 100%; text-overflow: ellipsis; background: #070b11; color: inherit; border: 1px solid var(--line);
     border-radius: 8px; padding: 10px 12px; font: inherit; }
   .pick select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,.2); }
   /* Our boards: the pink highlight. */
@@ -82,12 +82,12 @@
   #set-board:hover:not(:disabled) { background: rgba(255,45,149,.1); }
   .pick .btn { padding: 9px 14px; font-size: 12px; }
   .pick p { margin: 0; font-size: 13px; }
-  .comm { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); display: grid; gap: 10px; }
+  .comm { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
   /* Community firmware: quiet next to ours. */
   .comm .ask { font-size: 13px; letter-spacing: 1px; color: var(--muted); }
   .comm .ask b { color: var(--muted); font-weight: 700; }
   .comm select { color: var(--muted); }
-  .comm-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px;
+  .comm-card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; overflow-wrap: anywhere;
     background: rgba(255,255,255,.02); color: var(--muted); }
   .comm-card h4 { color: inherit; }
   .comm a { color: var(--muted); }
