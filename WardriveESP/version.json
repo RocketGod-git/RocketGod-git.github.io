@@ -3,6 +3,15 @@
   "date": "2026-11-24",
   "releases": [
     {
+      "version": "1.7.12",
+      "date": "2026-11-24",
+      "notes": [
+        "Marauder Mini v3 MK: the screen and microSD card work, and the board is recognized on its own",
+        "Boards with built-in PSRAM use it, leaving more memory for scanning",
+        "A long phone name no longer gets cut off on the screen"
+      ]
+    },
+    {
       "version": "1.7.11",
       "date": "2026-11-20",
       "notes": [
